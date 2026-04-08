@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TINA Airdrop
 
-## Getting Started
+Solana TOKEN2022 기반 TINA 토큰 에어드롭 신청 웹앱
 
-First, run the development server:
+## 구성
+
+| 구분 | 기술 스택 | 배포 |
+|------|----------|------|
+| **프론트엔드** | React 19 + Vite + Tailwind CSS v4 | AWS EC2 (포트 3003) |
+| **API 서버** | Express 5 + TypeScript + MySQL | GCP Cloud Run |
+
+## 주요 기능
+
+- Solana 지갑 연결 (Phantom, Solflare)
+- Associated Token Account (ATA) 생성/삭제
+- 에어드롭 신청 (지갑 서명 검증)
+- 신청 상태 조회
+- 지도 배경 애니메이션 (POI 시각화)
+
+## 시작하기
+
+### 프론트엔드
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev          # http://localhost:5173
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### API 서버
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cd api-server
+npm install
+cp .env.example .env # DB 접속 정보 입력
+npm run dev          # http://localhost:8080
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 배포
 
-## Learn More
+```bash
+# 프론트엔드 → EC2
+bash deploy-ec2.sh
 
-To learn more about Next.js, take a look at the following resources:
+# API 서버 → Cloud Run
+cd api-server
+bash deploy-cloudrun.sh dev    # dev 환경
+bash deploy-cloudrun.sh prod   # prod 환경
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Method | Path | 설명 |
+|--------|------|------|
+| `POST` | `/api/airdrop/claim` | 에어드롭 신청 (지갑 서명 필요) |
+| `GET` | `/api/airdrop/status/:wallet` | 신청 상태 조회 |
+| `GET` | `/health` | 헬스체크 |
 
-## Deploy on Vercel
+## DB 스키마
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```sql
+CREATE DATABASE tina_events DEFAULT CHARSET=utf8mb4;
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+-- api-server/schema.sql 참고
+```
+
+## 보안
+
+- 에어드롭 신청 시 지갑 메시지 서명 → 백엔드에서 tweetnacl로 검증
+- 본인 지갑만 신청 가능 (타인 지갑 주소로 대리 신청 불가)
+- CORS 제한 (허용된 도메인만 API 접근 가능)
