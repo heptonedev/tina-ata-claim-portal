@@ -1,5 +1,3 @@
-"use client";
-
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import type { TinaTokenState } from "@/hooks/useTinaToken";
@@ -53,7 +51,7 @@ export default function AirdropCard({ tokenState }: { tokenState: TinaTokenState
               )}
             </div>
             <div>
-              <h3 className="text-2xl font-[family-name:var(--font-headline)] font-bold text-on-surface tracking-tight">
+              <h3 className="text-2xl font-headline font-bold text-on-surface tracking-tight">
                 {loading ? "Verifying..." : !publicKey ? "Wallet Not Connected" : hasAta ? "ATA Active" : "ATA Not Found"}
               </h3>
               <div className="flex items-center gap-2 mt-1">
@@ -119,7 +117,7 @@ export default function AirdropCard({ tokenState }: { tokenState: TinaTokenState
         {/* TINA Balance (when ATA exists) */}
         {publicKey && !loading && hasAta && (
           <div>
-            <div className="text-6xl md:text-7xl font-black font-[family-name:var(--font-headline)] tracking-tight">
+            <div className="text-6xl md:text-7xl font-black font-headline tracking-tight">
               {tinaBalance !== null ? formatBalance(tinaBalance) : "0"}
             </div>
             <div className="text-primary font-bold tracking-[0.3em] text-sm uppercase mt-2">TINA Balance</div>

@@ -1,6 +1,3 @@
-"use client";
-
-import Image from "next/image";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useTinaToken } from "@/hooks/useTinaToken";
@@ -9,7 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import Toast from "@/components/Toast";
 import { formatBalance } from "@/utils/format";
 
-export default function Home() {
+export default function App() {
   const { publicKey, disconnect, wallet } = useWallet();
   const { setVisible } = useWalletModal();
   const tokenState = useTinaToken();
@@ -26,23 +23,24 @@ export default function Home() {
     : "";
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-[family-name:var(--font-body)] selection:bg-primary selection:text-on-primary">
+    <div className="min-h-screen bg-surface text-on-surface font-body selection:bg-primary selection:text-on-primary">
       {/* Fixed background orbs */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-tertiary/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2" />
+      <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/15 rounded-full blur-[150px] orb-1" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-tertiary/15 rounded-full blur-[120px] orb-2" />
+        <div className="absolute top-1/2 left-1/3 w-[500px] h-[500px] bg-secondary/10 rounded-full blur-[120px] orb-3" />
       </div>
 
       {/* Nav */}
-      <nav className="fixed top-0 w-full z-50 bg-[#060e20]/80 backdrop-blur-xl shadow-[0_4px_20px_rgba(52,254,160,0.04)]">
+      <nav className="fixed top-0 w-full z-50 bg-[#030712]/80 backdrop-blur-xl shadow-[0_4px_20px_rgba(52,254,160,0.04)]">
         <div className="flex justify-between items-center max-w-7xl mx-auto px-6 h-20">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-2.5">
-              <Image src="/tina-icon.png" alt="TINA" width={32} height={32} className="rounded-lg" />
-              <span className="text-2xl font-bold tracking-tighter text-primary font-[family-name:var(--font-headline)]">TINA</span>
+              <img src="/tina-icon.png" alt="TINA" width={32} height={32} className="rounded-lg" />
+              <span className="text-2xl font-bold tracking-tighter text-white font-headline">TINA</span>
             </div>
             <div className="hidden md:flex gap-6">
-              <a href="#" className="text-slate-400 hover:text-white transition-colors font-[family-name:var(--font-headline)] tracking-tight">
+              <a href="#" className="text-on-surface-variant hover:text-white transition-colors font-headline tracking-tight">
                 Airdrop
               </a>
             </div>
@@ -80,7 +78,7 @@ export default function Home() {
                   </div>
                   <div>
                     <p className="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-bold">Wallet Connected</p>
-                    <p className="font-[family-name:var(--font-headline)] font-bold text-lg text-on-surface tracking-tight">{shortAddr}</p>
+                    <p className="font-headline font-bold text-lg text-on-surface tracking-tight">{shortAddr}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-6">
@@ -106,7 +104,7 @@ export default function Home() {
           {/* Left: Main Action */}
           <div className="lg:col-span-7 space-y-8">
             <header className="fade-in-d1">
-              <h1 className="text-5xl md:text-6xl font-[family-name:var(--font-headline)] font-extrabold tracking-tighter text-on-surface mb-4 leading-[1.1]">
+              <h1 className="text-5xl md:text-6xl font-headline font-extrabold tracking-tighter text-on-surface mb-4 leading-[1.1]">
                 {!publicKey
                   ? <>Claim Your <span className="bg-gradient-to-r from-primary to-tertiary bg-clip-text text-transparent">Airdrop</span></>
                   : !tokenState.hasAta && !tokenState.loading
@@ -136,14 +134,14 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#060e20]">
+      <footer className="bg-[#030712]">
         <div className="flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto px-8 gap-6 w-full py-12 border-t border-surface-container-highest">
           <div className="flex flex-col items-center md:items-start gap-2">
             <div className="flex items-center gap-2">
-              <Image src="/tina-icon.png" alt="TINA" width={20} height={20} className="rounded" />
-              <span className="text-lg font-black text-white font-[family-name:var(--font-headline)]">TINA</span>
+              <img src="/tina-icon.png" alt="TINA" width={20} height={20} className="rounded" />
+              <span className="text-lg font-black text-white font-headline">TINA</span>
             </div>
-            <p className="text-sm tracking-wide uppercase text-slate-500">
+            <p className="text-sm tracking-wide uppercase text-outline">
               Built on Solana TOKEN2022
             </p>
           </div>
@@ -152,7 +150,7 @@ export default function Home() {
               href="https://solscan.io/token/BJUP7hZoN8GFunH3ucrdBjuphyz2Ryg1R8pt3D4tm6wZ"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm tracking-wide uppercase text-slate-500 hover:text-tertiary transition-colors"
+              className="text-sm tracking-wide uppercase text-outline hover:text-tertiary transition-colors"
             >
               Solscan
             </a>

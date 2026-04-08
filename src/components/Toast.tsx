@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 
 export type ToastType = "success" | "error" | "info";
@@ -89,12 +87,6 @@ export default function Toast({ message, type = "success", open, onClose, durati
           </svg>
         </button>
       </div>
-      <style jsx>{`
-        @keyframes slideIn {
-          from { opacity: 0; transform: translateX(20px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-      `}</style>
     </div>
   );
 }

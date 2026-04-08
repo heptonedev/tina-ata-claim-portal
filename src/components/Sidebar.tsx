@@ -1,5 +1,3 @@
-"use client";
-
 import { useWallet } from "@solana/wallet-adapter-react";
 import type { TinaTokenState } from "@/hooks/useTinaToken";
 import { formatBalance } from "@/utils/format";
@@ -27,7 +25,7 @@ export default function Sidebar({ tokenState }: { tokenState: TinaTokenState }) 
               </svg>
             </div>
             <div>
-              <p className="font-[family-name:var(--font-headline)] font-bold text-on-surface mb-1">Confidential Transfers</p>
+              <p className="font-headline font-bold text-on-surface mb-1">Confidential Transfers</p>
               <p className="text-sm text-on-surface-variant leading-relaxed">Enhanced privacy features for institutional-grade asset management.</p>
             </div>
           </div>
@@ -38,7 +36,7 @@ export default function Sidebar({ tokenState }: { tokenState: TinaTokenState }) 
               </svg>
             </div>
             <div>
-              <p className="font-[family-name:var(--font-headline)] font-bold text-on-surface mb-1">Extended Metadata</p>
+              <p className="font-headline font-bold text-on-surface mb-1">Extended Metadata</p>
               <p className="text-sm text-on-surface-variant leading-relaxed">Native support for complex on-chain asset data and attributes.</p>
             </div>
           </div>
@@ -49,7 +47,7 @@ export default function Sidebar({ tokenState }: { tokenState: TinaTokenState }) 
               </svg>
             </div>
             <div>
-              <p className="font-[family-name:var(--font-headline)] font-bold text-on-surface mb-1">Transfer Hooks</p>
+              <p className="font-headline font-bold text-on-surface mb-1">Transfer Hooks</p>
               <p className="text-sm text-on-surface-variant leading-relaxed">Custom logic executed on every transfer for ecosystem compliance.</p>
             </div>
           </div>
@@ -62,14 +60,14 @@ export default function Sidebar({ tokenState }: { tokenState: TinaTokenState }) 
           {/* SOL */}
           <div className="bg-surface-container-low rounded-2xl p-5 border border-outline-variant/10">
             <span className="text-on-surface-variant text-[10px] tracking-[0.2em] uppercase font-bold block mb-2">SOL</span>
-            <span className="text-2xl font-[family-name:var(--font-headline)] font-bold">
+            <span className="text-2xl font-headline font-bold">
               {loading ? "---" : solBalance !== null ? formatBalance(solBalance) : "---"}
             </span>
           </div>
           {/* TINA */}
           <div className="bg-surface-container-low rounded-2xl p-5 border border-outline-variant/10">
             <span className="text-on-surface-variant text-[10px] tracking-[0.2em] uppercase font-bold block mb-2">TINA</span>
-            <span className="text-2xl font-[family-name:var(--font-headline)] font-bold text-primary">
+            <span className="text-2xl font-headline font-bold text-primary">
               {loading ? "---" : tinaBalance !== null ? formatBalance(tinaBalance) : "0"}
             </span>
           </div>
