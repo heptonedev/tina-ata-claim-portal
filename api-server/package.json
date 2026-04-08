@@ -1,0 +1,27 @@
+{
+  "name": "tina-airdrop-api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "bs58": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.1",
+    "express": "^5.1.0",
+    "mysql2": "^3.14.1",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/bs58": "^4.0.4",
+    "@types/cors": "^2.8.18",
+    "@types/express": "^5.0.3",
+    "@types/node": "^22",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}

@@ -16,6 +16,8 @@ import {
 
 const TINA_MINT = new PublicKey("BJUP7hZoN8GFunH3ucrdBjuphyz2Ryg1R8pt3D4tm6wZ");
 
+const API_BASE = "https://tina-galxe-api-dev-398996508761.asia-northeast3.run.app";
+
 export interface TinaTokenState {
   solBalance: number | null;
   tinaBalance: number | null;
@@ -36,7 +38,7 @@ export interface TinaTokenState {
 
 export function useTinaToken(): TinaTokenState {
   const { connection } = useConnection();
-  const { publicKey, sendTransaction } = useWallet();
+  const { publicKey, sendTransaction, signMessage } = useWallet();
 
   const [solBalance, setSolBalance] = useState<number | null>(null);
   const [tinaBalance, setTinaBalance] = useState<number | null>(null);
@@ -230,23 +232,61 @@ export function useTinaToken(): TinaTokenState {
   }, [publicKey, sendTransaction, connection, ataAddress, tinaBalance, refresh]);
 
   const claimAirdrop = useCallback(async () => {
-    if (!publicKey || !hasAta) return;
+    if (!publicKey || !hasAta || !signMessage) return;
 
     setClaiming(true);
     setError(null);
 
     try {
-      // Placeholder: actual airdrop logic requires backend API
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setSuccessMessage("Airdrop claimed successfully! Tokens will arrive in your wallet shortly.");
+      // 서명할 메시지 생성
+      const walletAddr = publicKey.toBase58();
+      const timestamp = Date.now();
+      const message = `TINA Airdrop Claim\nWallet: ${walletAddr}\nTimestamp: ${timestamp}`;
+
+      // 지갑으로 메시지 서명 (수수료 없음)
+      const encodedMessage = new TextEncoder().encode(message);
+      const signatureBytes = await signMessage(encodedMessage);
+
+      // bs58 인코딩
+      const { default: bs58 } = await import("bs58");
+      const signature = bs58.encode(signatureBytes);
+
+      const res = await fetch(`${API_BASE}/api/airdrop/claim`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          walletAddress: walletAddr,
+          amount: 0,
+          message,
+          signature,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.status === 409) {
+        setError("Airdrop already claimed for this wallet.");
+        return;
+      }
+
+      if (!res.ok) {
+        setError(data.error || "Failed to claim airdrop.");
+        return;
+      }
+
+      setSuccessMessage("Airdrop claim submitted! Tokens will arrive in your wallet shortly.");
       await refresh();
-    } catch (err) {
-      console.error("Failed to claim airdrop:", err);
-      setError("Failed to claim airdrop. Please try again.");
+    } catch (err: any) {
+      if (err?.message?.includes("User rejected")) {
+        setError("Signature request was rejected.");
+      } else {
+        console.error("Failed to claim airdrop:", err);
+        setError("Failed to claim airdrop. Please try again.");
+      }
     } finally {
       setClaiming(false);
     }
-  }, [publicKey, hasAta, refresh]);
+  }, [publicKey, hasAta, signMessage, refresh]);
 
   return {
     solBalance,

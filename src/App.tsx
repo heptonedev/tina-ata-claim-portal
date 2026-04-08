@@ -4,6 +4,7 @@ import { useTinaToken } from "@/hooks/useTinaToken";
 import AirdropCard from "@/components/AirdropCard";
 import Sidebar from "@/components/Sidebar";
 import Toast from "@/components/Toast";
+import MapBackground from "@/components/MapBackground";
 import { formatBalance } from "@/utils/format";
 
 export default function App() {
@@ -23,12 +24,12 @@ export default function App() {
     : "";
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-body selection:bg-primary selection:text-on-primary">
-      {/* Fixed background orbs */}
-      <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/15 rounded-full blur-[150px] orb-1" />
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-tertiary/15 rounded-full blur-[120px] orb-2" />
-        <div className="absolute top-1/2 left-1/3 w-[500px] h-[500px] bg-secondary/10 rounded-full blur-[120px] orb-3" />
+    <div className="min-h-screen text-on-surface font-body selection:bg-primary selection:text-on-primary">
+      {/* Animated map background with POI markers */}
+      <MapBackground />
+      <div className="fixed inset-0 -z-[5] pointer-events-none overflow-hidden">
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[150px] orb-1" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-tertiary/10 rounded-full blur-[120px] orb-2" />
       </div>
 
       {/* Nav */}
