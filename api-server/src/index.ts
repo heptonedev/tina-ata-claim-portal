@@ -17,6 +17,20 @@ app.use(cors({
 
 app.use(express.json());
 
+// Request/Response logging
+app.use((req, res, next) => {
+  if (req.path === "/health") return next();
+
+  const start = Date.now();
+  const originalJson = res.json.bind(res);
+  res.json = (body: any) => {
+    const ms = Date.now() - start;
+    console.log(`${req.method} ${req.originalUrl} → ${res.statusCode} (${ms}ms)`, JSON.stringify(body));
+    return originalJson(body);
+  };
+  next();
+});
+
 // Health check
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
