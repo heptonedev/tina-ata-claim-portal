@@ -13,17 +13,17 @@ export default function App() {
   const tokenState = useTinaToken();
 
   const handleDisconnect = async () => {
+    // 지갑 adapter 연결 해제
     try { if (wallet?.adapter) await wallet.adapter.disconnect(); } catch {}
-    try {
-      await disconnect();
-    } catch {
-      /* ignore */
-    }
-    try {
-      localStorage.removeItem("walletName");
-    } catch {
-      /* ignore */
-    }
+    try { await disconnect(); } catch {}
+
+    // 지갑 provider 사이트 연결 완전 해제 (다음 연결 시 계정 선택 팝업 노출)
+    try { await (window as any).phantom?.solana?.disconnect(); } catch {}
+    try { await (window as any).solflare?.disconnect(); } catch {}
+    try { await (window as any).ethereum?.request({ method: "wallet_revokePermissions", params: [{ eth_accounts: {} }] }); } catch {}
+
+    localStorage.removeItem("walletName");
+    sessionStorage.setItem("wallet_disconnected", "1");
     window.location.reload();
   };
 
