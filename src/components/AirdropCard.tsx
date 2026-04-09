@@ -88,13 +88,13 @@ export default function AirdropCard({ tokenState }: { tokenState: TinaTokenState
                 <p className="text-sm text-on-surface leading-snug">
                   {hasAta ? (
                     <>
-                      Your TINA token account is active.
-                      <br />Click the button below to claim your airdrop.
+                      Your TINA token account is active and ready to receive rewards.
+                      <br />Click below to claim your airdrop. A wallet signature is required for verification.
                     </>
                   ) : (
                     <>
-                      Your wallet is connected but lacks a TINA token account.
-                      <br />Create an ATA first to receive the airdrop.
+                      Your wallet is connected but needs a TINA token account (ATA).
+                      <br />Create one to start receiving TINA tokens from missions and airdrops.
                     </>
                   )}
                 </p>
@@ -172,13 +172,15 @@ export default function AirdropCard({ tokenState }: { tokenState: TinaTokenState
                 </>
               )}
             </button>
-            <button
-              onClick={closeAta}
-              disabled={closing || (tinaBalance !== null && tinaBalance > 0)}
-              className="px-6 py-5 rounded-2xl text-sm font-bold border border-outline-variant/20 text-on-surface-variant hover:text-error-dim hover:border-error-dim/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              {closing ? <Spinner size={16} /> : "Close ATA"}
-            </button>
+            {import.meta.env.DEV && (
+              <button
+                onClick={closeAta}
+                disabled={closing || (tinaBalance !== null && tinaBalance > 0)}
+                className="px-6 py-5 rounded-2xl text-sm font-bold border border-outline-variant/20 text-on-surface-variant hover:text-error-dim hover:border-error-dim/30 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                {closing ? <Spinner size={16} /> : "Close ATA"}
+              </button>
+            )}
           </div>
         )}
       </div>

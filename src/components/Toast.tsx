@@ -56,7 +56,7 @@ export default function Toast({ message, type = "success", open, onClose, durati
   };
 
   return (
-    <div className="fixed top-24 right-6 z-[100]">
+    <div className="fixed top-24 left-4 right-4 sm:left-auto sm:right-6 z-[100]">
       <div
         className={`
           flex items-start gap-4 px-6 py-5 rounded-2xl

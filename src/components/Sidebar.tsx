@@ -12,43 +12,47 @@ export default function Sidebar({ tokenState }: { tokenState: TinaTokenState }) 
 
   return (
     <div className="space-y-6">
-      {/* Why Token-2022? */}
+      {/* About TINA */}
       <div className="bg-surface-container-low rounded-[2rem] p-8 border border-outline-variant/10">
         <h4 className="text-xs font-black uppercase tracking-[0.3em] text-on-surface-variant mb-6">
-          Why Token-2022?
+          About TINA
         </h4>
-        <div className="space-y-6">
+        <p className="text-sm text-on-surface-variant leading-relaxed mb-6">
+          TINA is a location-based reward platform. Discover &amp; register places on the map, complete missions, and earn Biscuits — redeemable for TINA tokens.
+        </p>
+        <div className="space-y-5">
           <div className="flex gap-4">
             <div className="shrink-0 w-10 h-10 rounded-full bg-tertiary/10 flex items-center justify-center">
               <svg className="w-5 h-5 text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
               </svg>
             </div>
             <div>
-              <p className="font-headline font-bold text-on-surface mb-1">Confidential Transfers</p>
-              <p className="text-sm text-on-surface-variant leading-relaxed">Enhanced privacy features for institutional-grade asset management.</p>
+              <p className="font-headline font-bold text-on-surface mb-1">Map &amp; POI</p>
+              <p className="text-sm text-on-surface-variant leading-relaxed">Explore, register, and verify places on a community-driven map.</p>
             </div>
           </div>
           <div className="flex gap-4">
             <div className="shrink-0 w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
               <svg className="w-5 h-5 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .982-3.172M12 3.75a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5Z" />
               </svg>
             </div>
             <div>
-              <p className="font-headline font-bold text-on-surface mb-1">Extended Metadata</p>
-              <p className="text-sm text-on-surface-variant leading-relaxed">Native support for complex on-chain asset data and attributes.</p>
+              <p className="font-headline font-bold text-on-surface mb-1">Missions &amp; Rewards</p>
+              <p className="text-sm text-on-surface-variant leading-relaxed">Drive, check in, snap photos — complete missions to earn Biscuits.</p>
             </div>
           </div>
           <div className="flex gap-4">
             <div className="shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
               <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9m18 0V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v3" />
               </svg>
             </div>
             <div>
-              <p className="font-headline font-bold text-on-surface mb-1">Transfer Hooks</p>
-              <p className="text-sm text-on-surface-variant leading-relaxed">Custom logic executed on every transfer for ecosystem compliance.</p>
+              <p className="font-headline font-bold text-on-surface mb-1">Solana Token-2022</p>
+              <p className="text-sm text-on-surface-variant leading-relaxed">TINA token runs on Solana's Token-2022 with extended metadata and transfer hooks.</p>
             </div>
           </div>
         </div>

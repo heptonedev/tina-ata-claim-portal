@@ -115,9 +115,9 @@ export default function App() {
               </h1>
               <p className="text-on-surface-variant text-lg max-w-xl leading-relaxed">
                 {!publicKey
-                  ? "Connect your wallet to participate in the TINA token airdrop. Powered by Solana's secure TOKEN2022 program."
+                  ? "TINA is a location-based reward platform where you discover places, complete missions, and earn rewards. Connect your Solana wallet to claim your TINA token airdrop."
                   : !tokenState.hasAta && !tokenState.loading
-                    ? "To join the TINA ecosystem, you must first initialize your Associated Token Account using the Token-2022 program standard."
+                    ? "To receive TINA tokens, you need an Associated Token Account (ATA) on the Solana Token-2022 program. Create one to get started."
                     : "Your ATA is active. Claim your airdrop below."
                 }
               </p>
@@ -136,25 +136,31 @@ export default function App() {
 
       {/* Footer */}
       <footer className="bg-[#030712]">
-        <div className="flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto px-8 gap-6 w-full py-12 border-t border-surface-container-highest">
-          <div className="flex flex-col items-center md:items-start gap-2">
-            <div className="flex items-center gap-2">
-              <img src="/tina-icon.png" alt="TINA" width={20} height={20} className="rounded" />
-              <span className="text-lg font-black text-white font-headline">TINA</span>
+        <div className="max-w-7xl mx-auto px-8 py-12 border-t border-surface-container-highest">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-8">
+            <div className="flex flex-col gap-3 max-w-md">
+              <div className="flex items-center gap-2">
+                <img src="/tina-icon.png" alt="TINA" width={20} height={20} className="rounded" />
+                <span className="text-lg font-black text-white font-headline">TINA</span>
+              </div>
+              <p className="text-sm text-on-surface-variant leading-relaxed">
+                Discover places, complete missions, and earn rewards on the map. TINA turns your everyday movement into data and connects it to rewards.
+              </p>
+              <p className="text-xs text-outline mt-1">
+                Built on Solana &middot; SPL Token-2022
+              </p>
             </div>
-            <p className="text-sm tracking-wide uppercase text-outline">
-              Built on Solana TOKEN2022
-            </p>
-          </div>
-          <div className="flex gap-8">
-            <a
-              href="https://solscan.io/token/BJUP7hZoN8GFunH3ucrdBjuphyz2Ryg1R8pt3D4tm6wZ"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm tracking-wide uppercase text-outline hover:text-tertiary transition-colors"
-            >
-              Solscan
-            </a>
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-black uppercase tracking-[0.2em] text-on-surface-variant">Links</span>
+              <a
+                href="https://solscan.io/token/BJUP7hZoN8GFunH3ucrdBjuphyz2Ryg1R8pt3D4tm6wZ"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-outline hover:text-tertiary transition-colors"
+              >
+                Solscan
+              </a>
+            </div>
           </div>
         </div>
       </footer>
