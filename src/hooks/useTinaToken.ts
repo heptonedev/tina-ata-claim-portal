@@ -18,6 +18,12 @@ const TINA_MINT = new PublicKey("BJUP7hZoN8GFunH3ucrdBjuphyz2Ryg1R8pt3D4tm6wZ");
 
 const API_BASE = "https://tina-galxe-api-dev-398996508761.asia-northeast3.run.app";
 
+const GALXE_CLIENT_ID = "2129a0a0f3b7f593e9923cfd745dd665af85fb166b5a4cf93ebeda38ea58b84f";
+const GALXE_OAUTH_URL = "https://app.galxe.com/oauth";
+const GALXE_REDIRECT_URI = import.meta.env.DEV
+  ? "http://localhost:5173/"
+  : "https://tina-galxe.heptone.io/";
+
 export interface TinaTokenState {
   solBalance: number | null;
   tinaBalance: number | null;
@@ -38,7 +44,7 @@ export interface TinaTokenState {
 
 export function useTinaToken(): TinaTokenState {
   const { connection } = useConnection();
-  const { publicKey, sendTransaction, signMessage } = useWallet();
+  const { publicKey, sendTransaction } = useWallet();
 
   const [solBalance, setSolBalance] = useState<number | null>(null);
   const [tinaBalance, setTinaBalance] = useState<number | null>(null);
@@ -231,62 +237,93 @@ export function useTinaToken(): TinaTokenState {
     }
   }, [publicKey, sendTransaction, connection, ataAddress, tinaBalance, refresh]);
 
+  // Galxe OAuth 리다이렉트로 에어드롭 신청 시작
   const claimAirdrop = useCallback(async () => {
-    if (!publicKey || !hasAta || !signMessage) return;
+    if (!publicKey || !hasAta) return;
 
-    setClaiming(true);
-    setError(null);
+    // 지갑 주소를 localStorage에 저장 (콜백에서 사용)
+    localStorage.setItem("galxe_claim_wallet", publicKey.toBase58());
 
-    try {
-      // 서명할 메시지 생성
-      const walletAddr = publicKey.toBase58();
-      const timestamp = Date.now();
-      const message = `TINA Airdrop Claim\nWallet: ${walletAddr}\nTimestamp: ${timestamp}`;
+    // CSRF 방지용 state 생성
+    const state = crypto.randomUUID();
+    localStorage.setItem("galxe_oauth_state", state);
 
-      // 지갑으로 메시지 서명 (수수료 없음)
-      const encodedMessage = new TextEncoder().encode(message);
-      const signatureBytes = await signMessage(encodedMessage);
+    // Galxe OAuth 페이지로 리다이렉트
+    const params = new URLSearchParams({
+      client_id: GALXE_CLIENT_ID,
+      scope: "GalxeID SolanaAddress EVMAddress Email Twitter Discord Github Telegram",
+      redirect_uri: GALXE_REDIRECT_URI,
+      state,
+    });
 
-      // bs58 인코딩
-      const { default: bs58 } = await import("bs58");
-      const signature = bs58.encode(signatureBytes);
+    window.location.href = `${GALXE_OAUTH_URL}?${params.toString()}`;
+  }, [publicKey, hasAta]);
 
-      const res = await fetch(`${API_BASE}/api/airdrop/claim`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          walletAddress: walletAddr,
-          amount: 0,
-          message,
-          signature,
-        }),
-      });
+  // Galxe OAuth 콜백 처리 (페이지 로드 시 URL에 code가 있으면)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const state = params.get("state");
 
-      const data = await res.json();
+    if (!code || !publicKey) return;
 
-      if (res.status === 409) {
-        setError("Airdrop already claimed for this wallet.");
-        return;
-      }
+    const savedState = localStorage.getItem("galxe_oauth_state");
+    const savedWallet = localStorage.getItem("galxe_claim_wallet");
 
-      if (!res.ok) {
-        setError(data.error || "Failed to claim airdrop.");
-        return;
-      }
-
-      setSuccessMessage("Airdrop claim submitted! Tokens will arrive in your wallet shortly.");
-      await refresh();
-    } catch (err: any) {
-      if (err?.message?.includes("User rejected")) {
-        setError("Signature request was rejected.");
-      } else {
-        console.error("Failed to claim airdrop:", err);
-        setError("Failed to claim airdrop. Please try again.");
-      }
-    } finally {
-      setClaiming(false);
+    // state 검증
+    if (state !== savedState) {
+      setError("Invalid OAuth state. Please try again.");
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
     }
-  }, [publicKey, hasAta, signMessage, refresh]);
+
+    // URL에서 code 파라미터 제거
+    window.history.replaceState({}, "", window.location.pathname);
+
+    // localStorage 정리
+    localStorage.removeItem("galxe_oauth_state");
+    localStorage.removeItem("galxe_claim_wallet");
+
+    // API 서버에 code 전달하여 검증 + 에어드롭 신청
+    const verifyGalxe = async () => {
+      setClaiming(true);
+      setError(null);
+
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/galxe/verify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code,
+            walletAddress: savedWallet || publicKey.toBase58(),
+            redirectUri: GALXE_REDIRECT_URI,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (res.status === 409) {
+          setError("Airdrop already claimed for this wallet.");
+          return;
+        }
+
+        if (!res.ok) {
+          setError(data.error || "Galxe verification failed.");
+          return;
+        }
+
+        setSuccessMessage("Airdrop claim submitted! Galxe identity verified successfully.");
+        await refresh();
+      } catch (err) {
+        console.error("Galxe verify error:", err);
+        setError("Failed to verify Galxe identity. Please try again.");
+      } finally {
+        setClaiming(false);
+      }
+    };
+
+    verifyGalxe();
+  }, [publicKey, refresh]);
 
   return {
     solBalance,

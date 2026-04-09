@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import airdropRouter from "./routes/airdrop.js";
+import authRouter from "./routes/auth.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 8080;
@@ -38,6 +39,7 @@ app.get("/health", (_req, res) => {
 
 // Routes
 app.use("/api/airdrop", airdropRouter);
+app.use("/api/auth", authRouter);
 
 app.listen(PORT, () => {
   console.log(`API server running on port ${PORT}`);

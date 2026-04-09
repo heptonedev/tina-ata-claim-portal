@@ -14,8 +14,16 @@ export default function App() {
 
   const handleDisconnect = async () => {
     try { if (wallet?.adapter) await wallet.adapter.disconnect(); } catch {}
-    try { await disconnect(); } catch {}
-    localStorage.removeItem("walletName");
+    try {
+      await disconnect();
+    } catch {
+      /* ignore */
+    }
+    try {
+      localStorage.removeItem("walletName");
+    } catch {
+      /* ignore */
+    }
     window.location.reload();
   };
 
