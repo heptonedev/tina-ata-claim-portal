@@ -24,6 +24,17 @@ const GALXE_REDIRECT_URI = import.meta.env.DEV
   ? "http://localhost:5173/"
   : "https://tina-galxe.heptone.io/";
 
+// 형식은 API 서버 routes/auth.ts 의 verifyClaimSignature 와 같아야 한다.
+function buildClaimMessage(wallet: string, nonce: string, issuedAt: string): string {
+  return ["TINA Airdrop Claim", `Wallet: ${wallet}`, `Nonce: ${nonce}`, `Issued At: ${issuedAt}`].join("\n");
+}
+
+function toBase64(bytes: Uint8Array): string {
+  let binary = "";
+  bytes.forEach((b) => (binary += String.fromCharCode(b)));
+  return btoa(binary);
+}
+
 export interface TinaTokenState {
   solBalance: number | null;
   tinaBalance: number | null;
@@ -44,7 +55,7 @@ export interface TinaTokenState {
 
 export function useTinaToken(): TinaTokenState {
   const { connection } = useConnection();
-  const { publicKey, sendTransaction } = useWallet();
+  const { publicKey, sendTransaction, signMessage } = useWallet();
 
   const [solBalance, setSolBalance] = useState<number | null>(null);
   const [tinaBalance, setTinaBalance] = useState<number | null>(null);
@@ -237,16 +248,35 @@ export function useTinaToken(): TinaTokenState {
     }
   }, [publicKey, sendTransaction, connection, ataAddress, tinaBalance, refresh]);
 
-  // Galxe OAuth 리다이렉트로 에어드롭 신청 시작
+  // 지갑 서명 → Galxe OAuth 리다이렉트로 에어드롭 신청 시작
   const claimAirdrop = useCallback(async () => {
     if (!publicKey || !hasAta) return;
 
-    // 지갑 주소를 localStorage에 저장 (콜백에서 사용)
-    localStorage.setItem("galxe_claim_wallet", publicKey.toBase58());
+    if (!signMessage) {
+      setError("This wallet does not support message signing. Please use Phantom or Solflare.");
+      return;
+    }
 
     // CSRF 방지용 state 생성
     const state = crypto.randomUUID();
+    const wallet = publicKey.toBase58();
+
+    // 신청 지갑의 본인 확인용 서명 (트랜잭션이 아니라 수수료 없음)
+    const message = buildClaimMessage(wallet, state, new Date().toISOString());
+    let signature: string;
+    try {
+      signature = toBase64(await signMessage(new TextEncoder().encode(message)));
+    } catch (err) {
+      console.error("Sign message error:", err);
+      setError("Wallet signature was cancelled. Please sign to claim the airdrop.");
+      return;
+    }
+
+    // 콜백에서 쓰도록 저장
+    localStorage.setItem("galxe_claim_wallet", wallet);
     localStorage.setItem("galxe_oauth_state", state);
+    localStorage.setItem("galxe_claim_message", message);
+    localStorage.setItem("galxe_claim_signature", signature);
 
     // Galxe OAuth 페이지로 리다이렉트
     const params = new URLSearchParams({
@@ -257,7 +287,7 @@ export function useTinaToken(): TinaTokenState {
     });
 
     window.location.href = `${GALXE_OAUTH_URL}?${params.toString()}`;
-  }, [publicKey, hasAta]);
+  }, [publicKey, hasAta, signMessage]);
 
   // Galxe OAuth 콜백 처리 (페이지 로드 시 URL에 code가 있으면)
   useEffect(() => {
@@ -269,6 +299,8 @@ export function useTinaToken(): TinaTokenState {
 
     const savedState = localStorage.getItem("galxe_oauth_state");
     const savedWallet = localStorage.getItem("galxe_claim_wallet");
+    const savedMessage = localStorage.getItem("galxe_claim_message");
+    const savedSignature = localStorage.getItem("galxe_claim_signature");
 
     // state 검증
     if (state !== savedState) {
@@ -283,6 +315,13 @@ export function useTinaToken(): TinaTokenState {
     // localStorage 정리
     localStorage.removeItem("galxe_oauth_state");
     localStorage.removeItem("galxe_claim_wallet");
+    localStorage.removeItem("galxe_claim_message");
+    localStorage.removeItem("galxe_claim_signature");
+
+    if (!savedWallet || !savedMessage || !savedSignature) {
+      setError("Claim session expired. Please click Claim again.");
+      return;
+    }
 
     // API 서버에 code 전달하여 검증 + 에어드롭 신청
     const verifyGalxe = async () => {
@@ -295,7 +334,9 @@ export function useTinaToken(): TinaTokenState {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             code,
-            walletAddress: savedWallet || publicKey.toBase58(),
+            walletAddress: savedWallet,
+            message: savedMessage,
+            signature: savedSignature,
             redirectUri: GALXE_REDIRECT_URI,
           }),
         });
@@ -303,7 +344,9 @@ export function useTinaToken(): TinaTokenState {
         const data = await res.json();
 
         if (res.status === 409) {
-          setError("Airdrop already claimed for this wallet.");
+          setError(data.error === "This Galxe account has already claimed the airdrop"
+            ? "This Galxe account has already claimed the airdrop."
+            : "Airdrop already claimed for this wallet.");
           return;
         }
 

@@ -104,22 +104,35 @@ api-server/               # API 서버 (Express + TypeScript)
 ## API 엔드포인트
 | Method | Path | 설명 |
 |--------|------|------|
-| `POST` | `/api/airdrop/claim` | 에어드롭 신청 (지갑 서명 검증) |
+| `POST` | `/api/auth/galxe/verify` | 에어드롭 신청 (지갑 서명 + Galxe OAuth 검증) |
 | `GET` | `/api/airdrop/status/:wallet` | 신청 상태 조회 |
+
+예전 `POST /api/airdrop/claim`은 2026-10-19 제거했다. Galxe 로그인 없이 지갑 서명만으로 신청되고
+지급 수량(`amount`)을 신청자가 정할 수 있었다.
 | `GET` | `/health` | 헬스체크 |
 
 ## 핵심 로직 흐름
 1. 지갑 연결 → SOL 잔액 조회 + ATA 존재 확인
 2. ATA 미존재 → ATA 생성 (SOL 수수료)
 3. ATA 존재 → 에어드롭 신청 가능
-4. Claim 클릭 → 지갑에서 메시지 서명 (수수료 없음) → API에 서명 전송
-5. 백엔드에서 서명 검증 → DB에 신청 기록 저장
-6. ATA 삭제 → 잔액 0일 때만 가능, rent-exempt SOL 반환
+4. Claim 클릭 → 지갑에서 메시지 서명 (수수료 없음) → Galxe OAuth로 리다이렉트
+   - 서명 메시지: `TINA Airdrop Claim` / `Wallet: <주소>` / `Nonce: <OAuth state>` / `Issued At: <ISO>`
+     (프론트 `buildClaimMessage`와 API `verifyClaimSignature`의 형식이 같아야 한다)
+5. Galxe에서 돌아오면 code + 지갑 주소 + 서명을 `/api/auth/galxe/verify`로 전송
+6. 백엔드: 지갑 서명 검증(15분 유효) → Galxe code로 사용자 조회 → 지갑·Galxe 계정 중복 확인 → `pending` 저장
+7. 실제 토큰 지급은 이 앱에 없다. `event_claims`의 `pending` 명단을 별도로 처리한다
+8. ATA 삭제 → 잔액 0일 때만 가능, rent-exempt SOL 반환
 
 ## 보안
-- **지갑 서명 검증**: 에어드롭 신청 시 지갑으로 메시지 서명 → 백엔드에서 tweetnacl로 검증
-- **CORS**: 프론트엔드 도메인만 허용 (tina-galxe.heptone.io, localhost:5173)
-- **중복 방지**: (event_name, wallet_address) UNIQUE 제약
+- **Galxe 로그인 필수**: 신청 경로는 `/api/auth/galxe/verify` 하나뿐이다
+- **지갑 본인 확인**: 신청 지갑의 서명을 tweetnacl로 검증한다. Galxe 계정 하나로 남의 지갑이나
+  여러 지갑을 등록하지 못하게 하기 위함이다. 서명에 신청 지갑 주소와 발급 시각이 들어가며 15분 지나면 거절한다
+- **중복 방지**: 지갑당 1회 `(event_name, wallet_address)`, Galxe 계정당 1회 `(event_name, galxe_id)` UNIQUE.
+  `uq_event_galxe`는 `api-server/migrations/20261019_unique_galxe_id.sql`로 dev·prod DB에 적용해야 한다
+- **CORS**: 프론트엔드 도메인만 허용 (tina-galxe.heptone.io, localhost:5173). 브라우저만 막을 뿐
+  curl 같은 직접 호출은 막지 못하므로, 보안은 위 서버 검증에 의존한다
+- **퀘스트 완료 여부는 확인하지 않는다**: Galxe 계정은 누구나 만들 수 있으므로, 캠페인 참여가 조건이면
+  별도 검증이 필요하다
 
 ## 주의사항
 - 공용 Solana RPC는 403 차단되므로 별도 RPC 사용 필수

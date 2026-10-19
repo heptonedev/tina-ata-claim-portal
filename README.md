@@ -51,7 +51,7 @@ bash deploy-cloudrun.sh prod   # prod 환경
 
 | Method | Path | 설명 |
 |--------|------|------|
-| `POST` | `/api/airdrop/claim` | 에어드롭 신청 (지갑 서명 필요) |
+| `POST` | `/api/auth/galxe/verify` | 에어드롭 신청 (지갑 서명 + Galxe 로그인 필요) |
 | `GET` | `/api/airdrop/status/:wallet` | 신청 상태 조회 |
 | `GET` | `/health` | 헬스체크 |
 
@@ -65,6 +65,7 @@ CREATE DATABASE tina_events DEFAULT CHARSET=utf8mb4;
 
 ## 보안
 
-- 에어드롭 신청 시 지갑 메시지 서명 → 백엔드에서 tweetnacl로 검증
+- Galxe 로그인 + 지갑 메시지 서명 → 백엔드에서 tweetnacl로 검증
 - 본인 지갑만 신청 가능 (타인 지갑 주소로 대리 신청 불가)
+- 지갑당 1회, Galxe 계정당 1회
 - CORS 제한 (허용된 도메인만 API 접근 가능)

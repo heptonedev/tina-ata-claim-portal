@@ -18,6 +18,6 @@ CREATE TABLE IF NOT EXISTS event_claims (
   UNIQUE KEY uq_event_wallet (event_name, wallet_address),
   INDEX idx_status (status),
   INDEX idx_event_name (event_name),
-  INDEX idx_galxe_id (galxe_id),
+  UNIQUE KEY uq_event_galxe (event_name, galxe_id),
   INDEX idx_requested_at (requested_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
