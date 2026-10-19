@@ -1,6 +1,6 @@
 # TINA Airdrop
 
-Solana TOKEN2022 기반 TINA 토큰 에어드롭 신청 웹앱
+TINA × Galxe 에어드롭 신청 웹앱. Galxe의 TINA 캠페인 중 한 곳이라도 포인트가 있으면 신청할 수 있다.
 
 ## 구성
 
@@ -26,32 +26,13 @@ npm install
 npm run dev          # http://localhost:5173
 ```
 
-### API 서버
-
-```bash
-cd api-server
-npm install
-cp .env.example .env # DB 접속 정보 입력
-npm run dev          # http://localhost:8080
-```
-
-## 배포
-
-```bash
-# 프론트엔드 → EC2
-bash deploy-ec2.sh
-
-# API 서버 → Cloud Run
-cd api-server
-bash deploy-cloudrun.sh dev    # dev 환경
-bash deploy-cloudrun.sh prod   # prod 환경
-```
-
-## API
+### API
 
 | Method | Path | 설명 |
 |--------|------|------|
-| `POST` | `/api/auth/galxe/verify` | 에어드롭 신청 (지갑 서명 + Galxe 로그인 필요) |
+| `GET` | `/api/auth/galxe/campaigns` | 대상 Galxe 캠페인 목록 |
+| `POST` | `/api/auth/galxe/session` | Galxe 로그인 → 포인트 확인 → 신청 세션 |
+| `POST` | `/api/claims` | 세션 + 지갑 서명으로 신청 |
 | `GET` | `/api/airdrop/status/:wallet` | 신청 상태 조회 |
 | `GET` | `/health` | 헬스체크 |
 
