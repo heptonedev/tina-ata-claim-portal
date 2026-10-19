@@ -7,17 +7,18 @@ import Note from "@/components/Note";
 import RouteStop, { type StopState } from "@/components/RouteStop";
 import GalxeMark from "@/components/GalxeMark";
 import Topography from "@/components/Topography";
-import { useCampaigns } from "@/hooks/useCampaigns";
+import { useEventInfo } from "@/hooks/useEventInfo";
 import { useClaim } from "@/hooks/useClaim";
 import { useGalxeSession } from "@/hooks/useGalxeSession";
 import { ATA_COST_SOL, useTokenAccount } from "@/hooks/useTokenAccount";
-import { formatSol, shortAddress } from "@/lib/format";
+import { formatDeadline, formatSol, shortAddress } from "@/lib/format";
 
 export default function App() {
   const { publicKey, disconnect } = useWallet();
   const { setVisible: openWalletModal } = useWalletModal();
   const galxe = useGalxeSession();
-  const campaigns = useCampaigns();
+  const { campaigns, closesAt } = useEventInfo();
+  const closed = closesAt !== null && Date.now() > Date.parse(closesAt);
 
   const onSessionExpired = useCallback((message: string) => galxe.signOut(message), [galxe]);
   const claim = useClaim(galxe.markClaimed, onSessionExpired);
@@ -61,10 +62,15 @@ export default function App() {
           <p className="mt-5 max-w-[46ch] text-lg leading-relaxed text-muted">
             Earned points in a TINA campaign on Galxe? Sign in with Galxe, connect a Solana wallet, create your TINA account, and claim.
           </p>
+          {closesAt && (
+            <p className={`mt-4 text-[0.95rem] font-semibold ${closed ? "text-muted" : "text-paper"}`}>
+              {closed ? `Claims closed on ${formatDeadline(closesAt)}.` : `Claims close ${formatDeadline(closesAt)}.`}
+            </p>
+          )}
 
           <ol className="mt-12">
             <RouteStop index={1} title="Sign in with Galxe" state={stop1}>
-              <GalxeStep galxe={galxe} />
+              <GalxeStep galxe={galxe} closed={closed} />
             </RouteStop>
 
             <RouteStop index={2} title="Connect your Solana wallet" state={stop2}>
@@ -109,7 +115,7 @@ export default function App() {
         </section>
 
         <div className="lg:pt-3">
-          <AccountPanel session={session} campaigns={campaigns} />
+          <AccountPanel session={session} campaigns={campaigns} closesAt={closesAt} />
         </div>
       </main>
     </div>
@@ -151,7 +157,7 @@ function TokenAccountStep({ tokenAccount }: { tokenAccount: ReturnType<typeof us
   );
 }
 
-function GalxeStep({ galxe }: { galxe: ReturnType<typeof useGalxeSession> }) {
+function GalxeStep({ galxe, closed }: { galxe: ReturnType<typeof useGalxeSession>; closed: boolean }) {
   const { state } = galxe;
 
   if (state.status === "waiting") {
@@ -168,6 +174,10 @@ function GalxeStep({ galxe }: { galxe: ReturnType<typeof useGalxeSession> }) {
 
   if (state.status === "checking") {
     return <p className="text-muted">Checking your points in both campaigns…</p>;
+  }
+
+  if (state.status === "idle" && closed) {
+    return <Note>Claims are closed. Thanks for joining the TINA campaigns.</Note>;
   }
 
   if (state.status === "idle") {

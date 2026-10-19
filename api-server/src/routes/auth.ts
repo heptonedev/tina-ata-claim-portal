@@ -1,22 +1,25 @@
 import { Router } from "express";
 import pool from "../db.js";
-import { EVENT_NAME } from "../event.js";
+import { EVENT_NAME, getClaimsCloseAt } from "../event.js";
 import { exchangeCodeForUser, GalxeUnavailableError, getCampaignIds, getCampaignInfo, getCampaignPoints, isEligible } from "../galxe.js";
 import { issueSession } from "../session.js";
 
 const router = Router();
 
-// GET /api/auth/galxe/campaigns — 로그인 전에도 어떤 Galxe 캠페인이 대상인지 보여준다
+// GET /api/auth/galxe/campaigns — 로그인 전에도 어떤 Galxe 캠페인이 대상인지와 신청 마감 시각을 보여준다
 router.get("/galxe/campaigns", async (_req, res) => {
+  const closeAt = getClaimsCloseAt();
+  const closesAt = closeAt === null ? null : new Date(closeAt).toISOString();
   if (getCampaignIds().length === 0) {
-    res.json({ campaigns: [] });
+    res.json({ campaigns: [], closesAt });
     return;
   }
   try {
-    res.json({ campaigns: await getCampaignInfo() });
+    res.json({ campaigns: await getCampaignInfo(), closesAt });
   } catch (err) {
     console.error("Galxe campaign info error:", (err as Error).message);
-    res.status(503).json({ error: "Couldn't load the Galxe campaigns." });
+    // 캠페인 정보를 못 불러와도 마감 시각은 보여준다
+    res.status(503).json({ error: "Couldn't load the Galxe campaigns.", closesAt });
   }
 });
 

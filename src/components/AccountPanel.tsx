@@ -1,9 +1,11 @@
 import type { CampaignInfo, GalxeSession } from "@/lib/api";
 import { TINA_MINT } from "@/lib/config";
-import { shortAddress } from "@/lib/format";
+import { formatDeadline, shortAddress } from "@/lib/format";
 
 // 오른쪽 패널: 대상 Galxe 캠페인과 (로그인 후) 캠페인별 포인트를 보여준다.
-export default function AccountPanel({ session, campaigns }: { session: GalxeSession | null; campaigns: CampaignInfo[] }) {
+type Props = { session: GalxeSession | null; campaigns: CampaignInfo[]; closesAt: string | null };
+
+export default function AccountPanel({ session, campaigns, closesAt }: Props) {
   const rows = session?.campaigns ?? campaigns;
   const total = session?.campaigns.reduce((sum, c) => sum + c.points, 0) ?? 0;
 
@@ -61,6 +63,12 @@ export default function AccountPanel({ session, campaigns }: { session: GalxeSes
       <dl className="mt-6 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 border-t border-contour pt-5 text-sm">
         <dt className="text-muted">Reward</dt>
         <dd className="text-right">TINA on Solana</dd>
+        {closesAt && (
+          <>
+            <dt className="text-muted">Claims close</dt>
+            <dd className="text-right">{formatDeadline(closesAt)}</dd>
+          </>
+        )}
         <dt className="text-muted">Contract</dt>
         <dd className="text-right">
           <a

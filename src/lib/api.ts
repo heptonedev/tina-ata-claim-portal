@@ -43,12 +43,14 @@ export function submitClaim(input: { sessionToken: string; walletAddress: string
   return post<{ claimId: number; walletAddress: string; status: string }>("/api/claims", input);
 }
 
-export async function getCampaigns(): Promise<CampaignInfo[]> {
+export type EventInfo = { campaigns: CampaignInfo[]; closesAt: string | null };
+
+export async function getEventInfo(): Promise<EventInfo> {
   try {
     const res = await fetch(`${API_BASE}/api/auth/galxe/campaigns`);
-    if (!res.ok) return [];
-    return (await res.json()).campaigns ?? [];
+    const data = await res.json().catch(() => ({}));
+    return { campaigns: res.ok ? data.campaigns ?? [] : [], closesAt: data.closesAt ?? null };
   } catch {
-    return [];
+    return { campaigns: [], closesAt: null };
   }
 }

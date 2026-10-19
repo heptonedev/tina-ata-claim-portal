@@ -1,6 +1,6 @@
 import { Router } from "express";
 import pool from "../db.js";
-import { EVENT_NAME } from "../event.js";
+import { claimsClosed, EVENT_NAME } from "../event.js";
 import { verifyClaimSignature } from "../claim-signature.js";
 import { verifySession } from "../session.js";
 import { hasTinaTokenAccount } from "../token-account.js";
@@ -13,9 +13,8 @@ const router = Router();
 router.post("/", async (req, res) => {
   const { sessionToken, walletAddress, message, signature } = req.body ?? {};
 
-  // CLAIMS_CLOSE_AT (ISO 시각, 예: 2026-10-31T23:59:59+09:00) 이후에는 신청을 받지 않는다
-  const closeAt = Date.parse(process.env.CLAIMS_CLOSE_AT ?? "");
-  if (!Number.isNaN(closeAt) && Date.now() > closeAt) {
+  // CLAIMS_CLOSE_AT 이후에는 신청을 받지 않는다
+  if (claimsClosed()) {
     res.status(403).json({ error: "Claims are closed." });
     return;
   }
