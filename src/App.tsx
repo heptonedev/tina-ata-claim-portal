@@ -10,7 +10,8 @@ import Topography from "@/components/Topography";
 import { useCampaigns } from "@/hooks/useCampaigns";
 import { useClaim } from "@/hooks/useClaim";
 import { useGalxeSession } from "@/hooks/useGalxeSession";
-import { shortAddress } from "@/lib/format";
+import { ATA_COST_SOL, useTokenAccount } from "@/hooks/useTokenAccount";
+import { formatSol, shortAddress } from "@/lib/format";
 
 export default function App() {
   const { publicKey, disconnect } = useWallet();
@@ -20,18 +21,21 @@ export default function App() {
 
   const onSessionExpired = useCallback((message: string) => galxe.signOut(message), [galxe]);
   const claim = useClaim(galxe.markClaimed, onSessionExpired);
+  const tokenAccount = useTokenAccount();
 
   const session = galxe.state.status === "ready" ? galxe.state.session : null;
   const signedIn = !!session;
   const claimed = session?.claim ?? null;
   const canContinue = signedIn && session.eligible && !claimed;
-  // 토큰 계정(ATA)은 지급할 때 만들어 주므로, 신청은 지갑 연결만으로 된다
   const walletReady = canContinue && !!publicKey;
+  // 토큰 계정(ATA)은 신청자가 직접 만든다 (보관료 SOL 을 신청자가 낸다)
+  const accountReady = walletReady && tokenAccount.status === "ready";
 
   // 포인트가 없으면 1단계에 머문다 (경로가 다음 단계로 이어지지 않게)
   const stop1: StopState = signedIn && (session.eligible || claimed) ? "done" : "current";
   const stop2: StopState = claimed || walletReady ? "done" : canContinue ? "current" : "upcoming";
-  const stop3: StopState = claimed ? "done" : walletReady ? "current" : "upcoming";
+  const stop3: StopState = claimed || accountReady ? "done" : walletReady ? "current" : "upcoming";
+  const stop4: StopState = claimed ? "done" : accountReady ? "current" : "upcoming";
 
   return (
     <div className="relative min-h-screen">
@@ -55,7 +59,7 @@ export default function App() {
             Claim TINA for your Galxe quests
           </h1>
           <p className="mt-5 max-w-[46ch] text-lg leading-relaxed text-muted">
-            Earned points in a TINA campaign on Galxe? Sign in with Galxe, connect a Solana wallet, and claim. No SOL needed.
+            Earned points in a TINA campaign on Galxe? Sign in with Galxe, connect a Solana wallet, create your TINA account, and claim.
           </p>
 
           <ol className="mt-12">
@@ -78,12 +82,18 @@ export default function App() {
               )}
             </RouteStop>
 
-            <RouteStop index={3} title="Claim your TINA" state={stop3} last>
+            <RouteStop index={3} title="Create your TINA account" state={stop3}>
+              {!claimed && walletReady && (
+                <TokenAccountStep tokenAccount={tokenAccount} />
+              )}
+            </RouteStop>
+
+            <RouteStop index={4} title="Claim your TINA" state={stop4} last>
               {claimed ? (
                 <Note tone="success">
                   Claim received. TINA will be sent to {shortAddress(claimed.walletAddress)} after the campaign ends.
                 </Note>
-              ) : walletReady && session && (
+              ) : accountReady && session && (
                 <>
                   <p className="max-w-prose leading-relaxed text-muted">
                     Sign a message to prove you own this wallet. Signing is free and doesn't move any funds.
@@ -103,6 +113,41 @@ export default function App() {
         </div>
       </main>
     </div>
+  );
+}
+
+function TokenAccountStep({ tokenAccount }: { tokenAccount: ReturnType<typeof useTokenAccount> }) {
+  const { status, solBalance, error } = tokenAccount;
+
+  if (status === "unknown" || status === "checking") {
+    return <p className="text-muted">Checking your wallet…</p>;
+  }
+  if (status === "ready") {
+    return <p className="text-muted">Your wallet can receive TINA.</p>;
+  }
+
+  const short = solBalance !== null && solBalance < ATA_COST_SOL;
+  return (
+    <>
+      <p className="max-w-prose leading-relaxed text-muted">
+        Your wallet needs a TINA account to receive TINA. Creating it costs about {formatSol(ATA_COST_SOL)} SOL, paid from this wallet.
+      </p>
+      {short && (
+        <Note>
+          This wallet has {formatSol(solBalance)} SOL. Add at least {formatSol(ATA_COST_SOL)} SOL, then check again.
+        </Note>
+      )}
+      <div className="mt-4 flex flex-wrap gap-3">
+        {short ? (
+          <Button onClick={() => void tokenAccount.recheck()}>Check again</Button>
+        ) : (
+          <Button busy={status === "creating"} onClick={tokenAccount.create}>
+            {status === "creating" ? "Creating account" : "Create TINA account"}
+          </Button>
+        )}
+      </div>
+      {error && <Note tone="error">{error}</Note>}
+    </>
   );
 }
 

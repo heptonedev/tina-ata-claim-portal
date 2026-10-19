@@ -3,13 +3,22 @@ import pool from "../db.js";
 import { EVENT_NAME } from "../event.js";
 import { verifyClaimSignature } from "../claim-signature.js";
 import { verifySession } from "../session.js";
+import { hasTinaTokenAccount } from "../token-account.js";
 
 const router = Router();
 
 // POST /api/claims — Galxe 세션 + 지갑 서명으로 에어드롭을 신청한다.
 // 지급 수량은 신청자가 정하지 않는다 (token_amount 는 0 으로 두고 지급 기준이 정해지면 서버가 채운다).
+// 신청 지갑에는 TINA 토큰 계정(ATA)이 있어야 한다 (신청자가 직접 만든다).
 router.post("/", async (req, res) => {
   const { sessionToken, walletAddress, message, signature } = req.body ?? {};
+
+  // CLAIMS_CLOSE_AT (ISO 시각, 예: 2026-10-31T23:59:59+09:00) 이후에는 신청을 받지 않는다
+  const closeAt = Date.parse(process.env.CLAIMS_CLOSE_AT ?? "");
+  if (!Number.isNaN(closeAt) && Date.now() > closeAt) {
+    res.status(403).json({ error: "Claims are closed." });
+    return;
+  }
 
   const session = verifySession(sessionToken);
   if (!session) {
@@ -28,6 +37,17 @@ router.post("/", async (req, res) => {
   const signatureError = verifyClaimSignature(walletAddress, session.sid, message, signature);
   if (signatureError) {
     res.status(401).json({ error: signatureError });
+    return;
+  }
+
+  try {
+    if (!(await hasTinaTokenAccount(walletAddress))) {
+      res.status(400).json({ error: "This wallet has no TINA token account yet. Create it, then claim." });
+      return;
+    }
+  } catch (err) {
+    console.error("Token account check failed:", (err as Error).message);
+    res.status(503).json({ error: "Couldn't check your TINA token account. Try again in a minute." });
     return;
   }
 

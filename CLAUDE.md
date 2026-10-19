@@ -44,6 +44,7 @@ src/
 ├── hooks/
 │   ├── useGalxeSession.ts       # Galxe 로그인 콜백 처리, 세션 보관(sessionStorage)
 │   ├── useCampaigns.ts          # 로그인 전 캠페인 목록
+│   ├── useTokenAccount.ts       # TINA 토큰 계정(ATA) 확인·생성 (신청자 부담)
 │   └── useClaim.ts              # 지갑 서명 → 신청
 └── lib/
     ├── config.ts                # API 주소, Galxe OAuth, 토큰 주소
@@ -56,6 +57,7 @@ api-server/src/
 ├── galxe.ts                     # Galxe OAuth·포인트 조회 (공개 GraphQL)
 ├── session.ts                   # 신청 세션 토큰 (HMAC 서명, 30분)
 ├── claim-signature.ts           # 지갑 서명 검증
+├── token-account.ts             # 신청 지갑의 TINA ATA 온체인 확인
 └── routes/ auth.ts · claims.ts · airdrop.ts
 ```
 
@@ -124,11 +126,13 @@ api-server/src/
    **한 캠페인이라도 포인트가 있으면 대상자 (OR)**. 서버가 30분짜리 세션 토큰을 발급
    - 포인트는 Galxe ID가 아니라 **Galxe에 연결된 지갑 주소** 기준으로 쌓인다
 3. **Solana 지갑 연결** — 받을 지갑. Galxe 퀘스트에 쓴 주소와 달라도 된다
-4. **서명 후 신청** — 메시지 `TINA Airdrop Claim` / `Wallet: <주소>` / `Nonce: <세션 sid>` / `Issued At: <ISO>`.
-   서버가 세션·서명(10분 유효)·중복을 확인하고 `pending`으로 저장 (`token_amount`는 0)
+4. **TINA 토큰 계정(ATA) 만들기** — 신청자가 직접 만들고 보관료(약 0.0021 SOL)도 신청자가 낸다
+   (`useTokenAccount`, idempotent 생성). 이미 있으면 바로 다음 단계로 넘어간다
+5. **서명 후 신청** — 메시지 `TINA Airdrop Claim` / `Wallet: <주소>` / `Nonce: <세션 sid>` / `Issued At: <ISO>`.
+   서버가 마감(`CLAIMS_CLOSE_AT`)·세션·서명(10분 유효)·**온체인 ATA 존재**·중복을 확인하고
+   `pending`으로 저장 (`token_amount`는 0)
 
-토큰 계정(ATA)은 사용자에게 만들게 하지 않는다. 신청을 쉽게 하려고 지급할 때 만들어 준다
-(대상자 1명당 약 0.002 SOL을 지급하는 쪽이 부담).
+ATA 비용은 신청자 부담이다 (2026-10-19 결정). 2026-10-19 이전 화면은 지급 때 만들어 주는 방식이었다.
 
 ## 보안
 - **신청 경로는 `/api/claims` 하나**이며 Galxe 세션 + 지갑 서명이 모두 있어야 한다
@@ -195,6 +199,8 @@ ssh -i ~/.ssh/heptone-dev.pem ec2-user@172.31.39.223 \
 | `GALXE_CAMPAIGN_IDS` | ✅ | `GCTRHtYPu2,GCUoHtYCUo`. 비어 있으면 로그인 시 "not open yet" |
 | `SESSION_SECRET` | ✅ | 32자 이상, 모든 인스턴스 동일. 없으면 dev·prod에서 서버가 뜨지 않는다 (`openssl rand -hex 32`) |
 | `GALXE_CLIENT_SECRET` | ✅ | Galxe OAuth. **2026-10-19 기준 prod Cloud Run에 없음** |
+| `CLAIMS_CLOSE_AT` | | 신청 마감 ISO 시각 (예: `2026-10-31T23:59:59+09:00`). 이후 `/api/claims`는 403. 없으면 마감 없음 |
+| `SOLANA_RPC_URL` | | 신청 지갑의 ATA 확인용 mainnet RPC. 없으면 프론트와 같은 AllThatNode 주소 |
 | `GALXE_ACCESS_TOKEN` | | 지금은 불필요. Galxe가 공개 조회를 막으면 설정 (값은 Cloud Run 에만, 리포·채팅 금지) |
 | `DB_*` | ✅ | Cloud SQL `tina_events` |
 
