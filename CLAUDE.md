@@ -114,7 +114,12 @@ api-server/src/
 `POST /api/auth/galxe/verify`(로그인과 신청을 한 번에 처리하던 이전 방식).
 
 ## 핵심 로직 흐름
-1. **Galxe 로그인** → 서버가 code로 Galxe 사용자(GalxeID, 연결된 EVM·Solana 주소)를 조회
+1. **Galxe 로그인** — 데스크톱은 **팝업**, 모바일·지갑 앱 브라우저·팝업 차단 시에는 **페이지 이동**.
+   팝업 여부는 state 접두어 `popup-`로 구분한다(Chrome은 다른 사이트로 이동하면 `window.name`을 지운다).
+   팝업이 우리 도메인으로 돌아오면 `main.tsx`의 `handlePopupCallback`이 `window.opener.postMessage`와
+   `BroadcastChannel` 두 경로로 결과를 넘기고 창을 닫는다. 원래 창이 state를 확인한 뒤 서버를 호출한다.
+   Galxe는 iframe을 막아서(`frame-ancestors 'none'`) 팝업이 아니면 페이지 이동뿐이다. 
+   → 서버가 code로 Galxe 사용자(GalxeID, 연결된 EVM·Solana 주소)를 조회
 2. 연결 주소마다 `GALXE_CAMPAIGN_IDS`의 각 캠페인에서 받은 포인트(`claimedLoyaltyPoints`)를 조회.
    **한 캠페인이라도 포인트가 있으면 대상자 (OR)**. 서버가 30분짜리 세션 토큰을 발급
    - 포인트는 Galxe ID가 아니라 **Galxe에 연결된 지갑 주소** 기준으로 쌓인다

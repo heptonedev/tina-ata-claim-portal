@@ -109,6 +109,18 @@ export default function App() {
 function GalxeStep({ galxe }: { galxe: ReturnType<typeof useGalxeSession> }) {
   const { state } = galxe;
 
+  if (state.status === "waiting") {
+    return (
+      <>
+        <p className="max-w-prose leading-relaxed text-muted">Finish signing in with Galxe in the popup window.</p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Button variant="quiet" onClick={galxe.showPopup}>Show the Galxe window</Button>
+          <Button variant="quiet" onClick={galxe.continueInThisWindow}>Sign in on this page instead</Button>
+        </div>
+      </>
+    );
+  }
+
   if (state.status === "checking") {
     return <p className="text-muted">Checking your points in both campaigns…</p>;
   }
