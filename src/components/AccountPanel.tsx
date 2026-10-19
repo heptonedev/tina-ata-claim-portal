@@ -18,7 +18,7 @@ export default function AccountPanel({ session, campaigns }: { session: GalxeSes
       <p className="mt-2 text-sm leading-relaxed text-muted">
         {session
           ? "Points in either campaign make you eligible."
-          : "Earn points in either campaign to claim. One claim per Galxe account."}
+          : "Accounts that earned points in either campaign can claim. One claim per Galxe account."}
       </p>
 
       {rows.length > 0 && (

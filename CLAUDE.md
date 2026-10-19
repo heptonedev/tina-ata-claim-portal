@@ -135,13 +135,25 @@ api-server/src/
 - **CORS**는 브라우저만 막는다. 보안은 위 서버 검증에 의존한다
 - Galxe 사용자 정보(이메일·SNS)는 저장하지 않는다
 
+### 대상 캠페인 (2026-10-19 마케팅팀 확인)
+| 캠페인 ID | 이름 | 포인트 |
+|-----------|------|--------|
+| `GCTRHtYPu2` | Join the TINA Genesis | 60 |
+| `GCUoHtYCUo` | TINA 101: Fun Quiz & Easy Rewards | 40 |
+
+- 스페이스: TINA (ID `85280`, alias `JBvKEutjhxpReU6fy84MqE`). 스페이스 캠페인 14개 중 포인트를 주는 건 이 둘뿐이라
+  "Loyalty Points 보유자" = 두 캠페인 중 하나라도 포인트가 있는 사람
+- 두 캠페인 모두 **종료**됐다. 대상자는 확정 상태이고 새로 포인트를 얻을 방법이 없다
+- 포인트 조회(`claimedLoyaltyPoints`)는 공개 엔드포인트에서 **access-token 없이** 실제 값이 나온다 (2026-10-19 검증).
+  Galxe 대시보드에서 발급한 Server API 토큰은 유효하지만 이 기능에는 쓰지 않는다
+
 ### 환경변수 (API 서버)
 | 이름 | 필수 | 설명 |
 |------|------|------|
-| `GALXE_CAMPAIGN_IDS` | ✅ | 대상 캠페인 ID, 쉼표 구분. 비어 있으면 로그인 시 "not open yet" |
+| `GALXE_CAMPAIGN_IDS` | ✅ | `GCTRHtYPu2,GCUoHtYCUo`. 비어 있으면 로그인 시 "not open yet" |
 | `SESSION_SECRET` | ✅ | 32자 이상, 모든 인스턴스 동일. 없으면 dev·prod에서 서버가 뜨지 않는다 (`openssl rand -hex 32`) |
 | `GALXE_CLIENT_SECRET` | ✅ | Galxe OAuth. **2026-10-19 기준 prod Cloud Run에 없음** |
-| `GALXE_ACCESS_TOKEN` | | 포인트 조회에 Galxe access-token이 필요해지면 설정 |
+| `GALXE_ACCESS_TOKEN` | | 지금은 불필요. Galxe가 공개 조회를 막으면 설정 (값은 Cloud Run 에만, 리포·채팅 금지) |
 | `DB_*` | ✅ | Cloud SQL `tina_events` |
 
 ### 운영 데이터 주의

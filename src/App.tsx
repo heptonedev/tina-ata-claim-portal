@@ -10,7 +10,6 @@ import Topography from "@/components/Topography";
 import { useCampaigns } from "@/hooks/useCampaigns";
 import { useClaim } from "@/hooks/useClaim";
 import { useGalxeSession } from "@/hooks/useGalxeSession";
-import type { CampaignInfo } from "@/lib/api";
 import { shortAddress } from "@/lib/format";
 
 export default function App() {
@@ -61,7 +60,7 @@ export default function App() {
 
           <ol className="mt-12">
             <RouteStop index={1} title="Sign in with Galxe" state={stop1}>
-              <GalxeStep galxe={galxe} campaigns={campaigns} />
+              <GalxeStep galxe={galxe} />
             </RouteStop>
 
             <RouteStop index={2} title="Connect your Solana wallet" state={stop2}>
@@ -107,7 +106,7 @@ export default function App() {
   );
 }
 
-function GalxeStep({ galxe, campaigns }: { galxe: ReturnType<typeof useGalxeSession>; campaigns: CampaignInfo[] }) {
+function GalxeStep({ galxe }: { galxe: ReturnType<typeof useGalxeSession> }) {
   const { state } = galxe;
 
   if (state.status === "checking") {
@@ -148,22 +147,10 @@ function GalxeStep({ galxe, campaigns }: { galxe: ReturnType<typeof useGalxeSess
         <p className="text-muted">Signed in as Galxe ID {session.galxeId}</p>
         <Note>
           {session.hasLinkedAddress
-            ? "This account has no points in either TINA campaign yet. Complete a quest on Galxe to earn points, then sign in again."
+            ? "This Galxe account didn't earn points in either TINA campaign, so it can't claim. If you did the quests with another Galxe account, sign in with that one."
             : "This Galxe account has no linked wallet, so no points could be found. Link the wallet you used for the quests on Galxe, then sign in again."}
         </Note>
-        <div className="mt-4 flex flex-wrap gap-3">
-          {campaigns[0]?.url && (
-            <a
-              href={campaigns[0].url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center rounded-lg bg-tina px-5 text-[0.95rem] font-semibold text-white hover:bg-[#1a8bff]"
-            >
-              Go to the Galxe quests
-            </a>
-          )}
-          {switchAccount}
-        </div>
+        <div className="mt-4">{switchAccount}</div>
       </>
     );
   }
