@@ -165,8 +165,8 @@ gcloud run deploy tina-galxe-api-<env> --image <이미지@digest> --region=asia-
 
 | 환경 | 2026-10-19 상태 |
 |------|----------------|
-| dev | 신청자 ATA 생성·온체인 확인까지 배포 (리비전 00016), 캠페인 ID·SESSION_SECRET 설정, `uq_event_galxe` 적용, `CLAIMS_CLOSE_AT` 미설정 |
-| prod | **옛 코드 그대로** (옛 신청 경로 열려 있음), `GALXE_CLIENT_SECRET`·`SESSION_SECRET` 없음, 마이그레이션 미적용 |
+| dev | 신청자 ATA 생성·온체인 확인까지 배포 (리비전 00016), 캠페인 ID·SESSION_SECRET 설정, `uq_event_galxe` 적용, `CLAIMS_CLOSE_AT=2026-10-31T23:59:59+09:00` (리비전 00017) |
+| prod | **옛 코드 그대로** (옛 신청 경로 열려 있음), `GALXE_CLIENT_SECRET`·`SESSION_SECRET`·`CLAIMS_CLOSE_AT` 없음, 마이그레이션 미적용 |
 | 프론트 (`tina-galxe.heptone.io`) | 2026-10-19 새 화면 배포. **dev API를 부르도록 빌드**했다(운영 API가 옛 코드라서). 운영 API를 올린 뒤에는 `VITE_API_BASE` 없이 다시 빌드해 배포한다 |
 
 Galxe OAuth 리디렉션 주소로는 `https://tina-galxe.heptone.io/`만 등록돼 있다. `localhost:5173`은 등록돼 있지 않아
@@ -199,7 +199,7 @@ ssh -i ~/.ssh/heptone-dev.pem ec2-user@172.31.39.223 \
 | `GALXE_CAMPAIGN_IDS` | ✅ | `GCTRHtYPu2,GCUoHtYCUo`. 비어 있으면 로그인 시 "not open yet" |
 | `SESSION_SECRET` | ✅ | 32자 이상, 모든 인스턴스 동일. 없으면 dev·prod에서 서버가 뜨지 않는다 (`openssl rand -hex 32`) |
 | `GALXE_CLIENT_SECRET` | ✅ | Galxe OAuth. **2026-10-19 기준 prod Cloud Run에 없음** |
-| `CLAIMS_CLOSE_AT` | | 신청 마감 ISO 시각 (예: `2026-10-31T23:59:59+09:00`). 이후 `/api/claims`는 403. 없으면 마감 없음 |
+| `CLAIMS_CLOSE_AT` | | 신청 마감 ISO 시각. **확정: `2026-10-31T23:59:59+09:00`** (10/31 23:59 KST, 2026-10-19 결정). 이후 `/api/claims`는 403. 없으면 마감 없음 |
 | `SOLANA_RPC_URL` | | 신청 지갑의 ATA 확인용 mainnet RPC. 없으면 프론트와 같은 AllThatNode 주소 |
 | `GALXE_ACCESS_TOKEN` | | 지금은 불필요. Galxe가 공개 조회를 막으면 설정 (값은 Cloud Run 에만, 리포·채팅 금지) |
 | `DB_*` | ✅ | Cloud SQL `tina_events` |
