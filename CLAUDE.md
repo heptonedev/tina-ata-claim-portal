@@ -135,6 +135,30 @@ api-server/src/
 - **CORS**는 브라우저만 막는다. 보안은 위 서버 검증에 의존한다
 - Galxe 사용자 정보(이메일·SNS)는 저장하지 않는다
 
+### API 배포 (로컬 Docker 없이)
+`deploy-cloudrun.sh`는 로컬 Docker가 필요하다. Docker 없이 배포할 때는 이미지만 Cloud Build로 만들고
+배포는 `gcloud run deploy --update-env-vars`로 한다. 기본 Cloud Build 서비스 계정은 소스 버킷 권한이 없어
+실패하므로 기존 트리거와 같은 `tina-app` 서비스 계정을 지정한다.
+
+```bash
+cd api-server
+gcloud builds submit --region=asia-northeast3 --project=sound-jigsaw-459108-s9 \
+  --service-account=projects/sound-jigsaw-459108-s9/serviceAccounts/tina-app@sound-jigsaw-459108-s9.iam.gserviceaccount.com \
+  --config=<docker build + images 만 있는 설정, options.logging: CLOUD_LOGGING_ONLY> .
+gcloud run deploy tina-galxe-api-<env> --image <이미지@digest> --region=asia-northeast3 \
+  --project=sound-jigsaw-459108-s9 --update-env-vars NODE_ENV=<env>
+```
+
+- ⚠️ **`--set-env-vars`를 쓰지 말 것.** DB 접속정보·시크릿을 포함한 기존 환경변수를 모두 지운다.
+  `cloudbuild.yaml`이 예전에 이 옵션을 썼다(2026-10-19 `--update-env-vars`로 수정)
+- `.gcloudignore`가 `.env`(DB 비밀번호)와 `node_modules`를 업로드에서 뺀다
+- 쉼표가 들어간 값은 구분자를 바꿔서 넣는다: `"--update-env-vars=^@^GALXE_CAMPAIGN_IDS=A,B@SESSION_SECRET=..."`
+
+| 환경 | 2026-10-19 상태 |
+|------|----------------|
+| dev | 새 흐름 배포 완료 (리비전 00015), 캠페인 ID·SESSION_SECRET 설정, `uq_event_galxe` 적용 |
+| prod | **옛 코드 그대로** (옛 신청 경로 열려 있음), `GALXE_CLIENT_SECRET`·`SESSION_SECRET` 없음, 마이그레이션 미적용 |
+
 ### 대상 캠페인 (2026-10-19 마케팅팀 확인)
 | 캠페인 ID | 이름 | 포인트 |
 |-----------|------|--------|

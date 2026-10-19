@@ -1,0 +1,6 @@
+# Cloud Build 업로드에서 제외 (로컬 비밀값·빌드 산출물)
+.env
+.env.*
+node_modules/
+dist/
+.git
