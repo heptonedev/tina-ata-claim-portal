@@ -39,6 +39,11 @@ export function createGalxeSession(code: string): Promise<GalxeSession> {
   return post("/api/auth/galxe/session", { code });
 }
 
+/** 개발 서버 테스트용: 지금 로그인한 계정의 신청 기록을 지운다 (dev API 에만 있다). */
+export function resetClaimForTest(sessionToken: string) {
+  return post<{ deleted: number }>("/api/test/reset-claim", { sessionToken });
+}
+
 export function submitClaim(input: { sessionToken: string; walletAddress: string; message: string; signature: string }) {
   return post<{ claimId: number; walletAddress: string; status: string }>("/api/claims", input);
 }

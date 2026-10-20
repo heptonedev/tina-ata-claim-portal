@@ -117,7 +117,15 @@ export default function App() {
 
         <div className="lg:pt-3">
           <AccountPanel session={session} campaigns={campaigns} closesAt={closesAt} />
-          {SHOW_DEVNET_TOOLS && <DevnetTools refreshKey={tokenAccount.status} onChanged={() => void tokenAccount.recheck()} />}
+          {SHOW_DEVNET_TOOLS && (
+            <DevnetTools
+              refreshKey={tokenAccount.status}
+              sessionToken={session?.sessionToken ?? null}
+              claimed={!!claimed}
+              onClaimReset={galxe.markUnclaimed}
+              onAccountChanged={() => void tokenAccount.recheck()}
+            />
+          )}
         </div>
       </main>
     </div>

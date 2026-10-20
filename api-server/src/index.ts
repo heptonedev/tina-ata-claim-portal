@@ -4,6 +4,7 @@ import cors from "cors";
 import airdropRouter from "./routes/airdrop.js";
 import authRouter from "./routes/auth.js";
 import claimsRouter from "./routes/claims.js";
+import testRouter, { TEST_RESET_ENABLED } from "./routes/test.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 8080;
@@ -56,6 +57,11 @@ app.get("/health", (_req, res) => {
 app.use("/api/airdrop", airdropRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/claims", claimsRouter);
+// 개발 서버 테스트용 신청 초기화 (운영에는 연결하지 않는다)
+if (TEST_RESET_ENABLED) {
+  app.use("/api/test", testRouter);
+  console.log("Test routes enabled: POST /api/test/reset-claim");
+}
 
 app.listen(PORT, () => {
   console.log(`API server running on port ${PORT}`);

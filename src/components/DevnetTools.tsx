@@ -8,11 +8,12 @@ import {
   getAssociatedTokenAddressSync,
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
+import { ApiError, resetClaimForTest } from "@/lib/api";
 import { SOLANA_NETWORK, TINA_MINT } from "@/lib/config";
 
 // devnet 빌드(로컬·Firebase 개발 사이트)에서만 보이는 테스트 도구.
-// TINA 계정(ATA)을 지워서 "Create your TINA account" 단계를 다시 테스트할 수 있게 한다.
-// 잔고가 있으면 닫을 수 없어서 남은 devnet TINA 를 devnet System 지갑으로 먼저 돌려보낸다.
+// 버튼 하나로 신청 기록(dev API)과 TINA 계정(ATA)을 함께 지워 처음부터 다시 테스트할 수 있게 한다.
+// ATA 는 잔고가 있으면 닫을 수 없어서 남은 devnet TINA 를 devnet System 지갑으로 먼저 돌려보낸다.
 
 export const SHOW_DEVNET_TOOLS = SOLANA_NETWORK === "devnet";
 
@@ -26,7 +27,17 @@ function ataOf(owner: PublicKey) {
   return getAssociatedTokenAddressSync(MINT, owner, false, TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID);
 }
 
-export default function DevnetTools({ refreshKey, onChanged }: { refreshKey: string; onChanged: () => void }) {
+type Props = {
+  /** 바뀌면 계정 상태를 다시 읽는다 */
+  refreshKey: string;
+  /** Galxe 로그인 세션 (없으면 신청 초기화는 하지 않는다) */
+  sessionToken: string | null;
+  claimed: boolean;
+  onClaimReset: () => void;
+  onAccountChanged: () => void;
+};
+
+export default function DevnetTools({ refreshKey, sessionToken, claimed, onClaimReset, onAccountChanged }: Props) {
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
   const [account, setAccount] = useState<AccountInfo>({ status: "loading" });
@@ -54,44 +65,53 @@ export default function DevnetTools({ refreshKey, onChanged }: { refreshKey: str
     void load();
   }, [load, refreshKey]);
 
-  const remove = useCallback(async () => {
-    if (!publicKey || account.status !== "active") return;
+  const reset = useCallback(async () => {
+    if (!publicKey) return;
     setDeleting(true);
     setMessage(null);
+    const done: string[] = [];
     try {
-      const address = ataOf(publicKey);
-      const tx = new Transaction();
-      if (account.amount > 0n) {
-        tx.add(
-          createTransferCheckedInstruction(address, MINT, ataOf(RETURN_WALLET), publicKey, account.amount, DECIMALS, [], TOKEN_2022_PROGRAM_ID),
-        );
+      // 1) 신청 기록 (dev API)
+      if (claimed && sessionToken) {
+        await resetClaimForTest(sessionToken);
+        onClaimReset();
+        done.push("claim");
       }
-      tx.add(createCloseAccountInstruction(address, publicKey, publicKey, [], TOKEN_2022_PROGRAM_ID));
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
-      tx.recentBlockhash = blockhash;
-      tx.feePayer = publicKey;
-      const signature = await sendTransaction(tx, connection);
-      await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
-      setMessage({
-        tone: "ok",
-        text:
-          account.amount === 0n
-            ? "TINA account deleted. You can create it again in step 3."
-            : `TINA account deleted. ${account.ui} test TINA went back to the test treasury.`,
-      });
-      onChanged();
+      // 2) TINA 계정
+      if (account.status === "active") {
+        const address = ataOf(publicKey);
+        const tx = new Transaction();
+        if (account.amount > 0n) {
+          tx.add(
+            createTransferCheckedInstruction(address, MINT, ataOf(RETURN_WALLET), publicKey, account.amount, DECIMALS, [], TOKEN_2022_PROGRAM_ID),
+          );
+        }
+        tx.add(createCloseAccountInstruction(address, publicKey, publicKey, [], TOKEN_2022_PROGRAM_ID));
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
+        tx.recentBlockhash = blockhash;
+        tx.feePayer = publicKey;
+        const signature = await sendTransaction(tx, connection);
+        await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
+        onAccountChanged();
+        done.push("account");
+      }
+      setMessage({ tone: "ok", text: "Reset done. You can run the whole flow again." });
     } catch (err) {
       const cancelled = err instanceof Error && /reject|cancel|denied/i.test(err.message);
+      const reason =
+        err instanceof ApiError ? err.message : cancelled ? "You cancelled the transaction." : err instanceof Error ? err.message : "";
       setMessage({
         tone: "error",
-        text: cancelled ? "You cancelled the transaction." : `Couldn't delete the account. ${err instanceof Error ? err.message : ""}`,
+        text: done.includes("claim") ? `Your claim was reset, but the TINA account wasn't deleted. ${reason}` : `Reset failed. ${reason}`,
       });
     } finally {
       setDeleting(false);
       setConfirming(false);
       void load();
     }
-  }, [publicKey, account, connection, sendTransaction, onChanged, load]);
+  }, [publicKey, claimed, sessionToken, account, connection, sendTransaction, onClaimReset, onAccountChanged, load]);
+
+  const canReset = (claimed && !!sessionToken) || account.status === "active";
 
   if (!publicKey) return null;
 
@@ -103,24 +123,26 @@ export default function DevnetTools({ refreshKey, onChanged }: { refreshKey: str
           Devnet test
         </span>
         <h2 id="devnet-tools-title" className="font-display text-lg font-semibold tracking-tight">
-          Reset your TINA account
+          Reset for testing
         </h2>
       </div>
       <p className="mt-2 text-sm leading-relaxed text-muted">
-        Delete this wallet&apos;s test TINA account to try &ldquo;Create your TINA account&rdquo; again. Only shown on the test site.
+        Deletes your claim and this wallet&apos;s test TINA account so you can run the whole flow again. Only shown on the test site.
       </p>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-contour pt-4">
-        <div className="min-w-0">
-          <p className="text-xs text-muted">TINA account</p>
-          <p className="mt-0.5 text-sm">
-            {account.status === "loading" ? "Checking…" : account.status === "none" ? "Not created" : `Active · ${account.ui} TINA`}
-          </p>
-        </div>
+      <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 border-t border-contour pt-4 text-sm">
+        <dt className="text-muted">Claim</dt>
+        <dd className="text-right">{sessionToken ? (claimed ? "Received" : "Not claimed") : "Sign in to see"}</dd>
+        <dt className="text-muted">TINA account</dt>
+        <dd className="text-right">
+          {account.status === "loading" ? "Checking…" : account.status === "none" ? "Not created" : `Active · ${account.ui} TINA`}
+        </dd>
+      </dl>
 
-        {account.status === "active" &&
-          (confirming ? (
-            <div className="flex items-center gap-1">
+      {canReset && (
+        <div className="mt-4 flex flex-wrap items-center justify-end gap-1">
+          {confirming ? (
+            <>
               <button
                 type="button"
                 onClick={() => setConfirming(false)}
@@ -131,13 +153,13 @@ export default function DevnetTools({ refreshKey, onChanged }: { refreshKey: str
               </button>
               <button
                 type="button"
-                onClick={() => void remove()}
+                onClick={() => void reset()}
                 disabled={deleting}
                 className="min-h-9 rounded-lg bg-stop px-4 text-sm font-semibold text-white hover:bg-[#f45d72] disabled:opacity-60"
               >
-                {deleting ? "Deleting…" : "Delete account"}
+                {deleting ? "Resetting…" : "Reset"}
               </button>
-            </div>
+            </>
           ) : (
             <button
               type="button"
@@ -147,10 +169,11 @@ export default function DevnetTools({ refreshKey, onChanged }: { refreshKey: str
               }}
               className="min-h-9 rounded-lg border border-contour-strong px-4 text-sm font-semibold text-paper transition-colors hover:border-stop hover:text-[#ffb3be]"
             >
-              Delete TINA account
+              Reset for testing
             </button>
-          ))}
-      </div>
+          )}
+        </div>
+      )}
 
       {confirming && !deleting && account.status === "active" && account.amount > 0n && (
         <p className="mt-3 text-sm text-muted">{account.ui} test TINA in this account goes back to the test treasury first.</p>

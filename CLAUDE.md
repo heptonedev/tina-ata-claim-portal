@@ -155,6 +155,12 @@ Galxe 로그인은 쓰지 않는다.
 - `gacha_address`·`points` 컬럼은 `migrations/20261020_gacha_claims.sql`. **새 서버 코드는 이 컬럼에 값을 넣으므로
   마이그레이션 없이 배포하면 Galxe 신청까지 실패한다.** dev·prod 모두 마이그레이션 → 배포 순서를 지킨다
 
+### 테스트 초기화 (개발 사이트 전용)
+devnet 빌드 화면(로컬·`tina-galxe-dev.web.app`·`tinaim.web.app`)에 "Reset for testing" 카드가 나온다(지갑 연결 시).
+버튼 하나로 ① 지금 로그인한 계정의 신청 기록 삭제(dev API `/api/test/reset-claim`, `pending`·미지급 건만)
+② 연결 지갑의 devnet TINA 계정 삭제(남은 devnet TINA는 devnet System 지갑 `CgpbS1…SurN`으로 반환 후 CloseAccount)를 한다.
+운영(mainnet) 빌드에는 카드가 없고, prod API에는 경로가 없다(404).
+
 ### 네트워크 (개발은 devnet)
 테스트에 실제 SOL이 들지 않도록 개발 환경은 devnet TINA(`4vwPq1eehywTuLFPqo7muAYAbF9cjjqVhv2h4EFqc1M5`)로 ATA를 확인·생성한다.
 지급은 운영(mainnet)만 해당한다.
@@ -238,6 +244,7 @@ ssh -i ~/.ssh/heptone-dev.pem ec2-user@172.31.39.223 \
 | `CLAIMS_CLOSE_AT` | | 신청 마감 ISO 시각. **확정: `2026-10-31T23:59:59+09:00`** (10/31 23:59 KST, 2026-10-19 결정). 이후 `/api/claims`는 403. 없으면 마감 없음 |
 | `SOLANA_RPC_URL` | | 신청 지갑의 ATA 확인용 RPC. 없으면 mainnet AllThatNode. **dev는 devnet RPC** |
 | `SOLANA_TINA_MINT` | | ATA 확인용 TINA 민트. 없으면 mainnet 민트. **dev는 devnet 민트** `4vwPq…c1M5` |
+| `ALLOW_TEST_RESET` | | `true`면(그리고 `NODE_ENV=dev`일 때만) `POST /api/test/reset-claim` 연결. 로그인한 계정의 미지급 신청을 지운다. **dev에만 설정, prod 금지** |
 | `GACHA_API_URL` | | 가챠 백엔드. 없으면 `https://tina-gacha-api.tina.im` |
 | `GALXE_ACCESS_TOKEN` | | 지금은 불필요. Galxe가 공개 조회를 막으면 설정 (값은 Cloud Run 에만, 리포·채팅 금지) |
 | `DB_*` | ✅ | Cloud SQL `tina_events` |

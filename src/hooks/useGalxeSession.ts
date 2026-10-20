@@ -105,5 +105,15 @@ export function useGalxeSession() {
     });
   }, []);
 
-  return { state, signIn, showPopup, continueInThisWindow, signOut, markClaimed };
+  /** 테스트 초기화로 신청 기록을 지운 뒤 다시 신청할 수 있게 한다. */
+  const markUnclaimed = useCallback(() => {
+    setState((prev) => {
+      if (prev.status !== "ready") return prev;
+      const session = { ...prev.session, claim: null };
+      save(session);
+      return { status: "ready", session };
+    });
+  }, []);
+
+  return { state, signIn, showPopup, continueInThisWindow, signOut, markClaimed, markUnclaimed };
 }
