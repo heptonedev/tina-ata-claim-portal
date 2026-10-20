@@ -200,7 +200,7 @@ gcloud run deploy tina-galxe-api-<env> --image <이미지@digest> --region=asia-
 | 환경 | 2026-10-19 상태 |
 |------|----------------|
 | dev | 가챠 신청·devnet 적용 (리비전 00019). 캠페인 ID·SESSION_SECRET·`CLAIMS_CLOSE_AT=2026-10-31T23:59:59+09:00`·`SOLANA_RPC_URL`(devnet)·`SOLANA_TINA_MINT`(devnet) 설정, `uq_event_galxe`·`20261020_gacha_claims` 적용 |
-| prod | **옛 코드 그대로** (옛 신청 경로 열려 있음), `GALXE_CLIENT_SECRET`·`SESSION_SECRET`·`CLAIMS_CLOSE_AT` 없음, 마이그레이션 둘 다 미적용 (`uq_event_galxe`, `20261020_gacha_claims`) |
+| prod | 새 코드 배포 (2026-10-20, 리비전 00008). 옛 신청 경로 제거됨(404). `SESSION_SECRET`(새로 생성)·`GALXE_CLIENT_SECRET`·`GALXE_CAMPAIGN_IDS`·`CLAIMS_CLOSE_AT` 설정, Solana는 기본값(mainnet), `ALLOW_TEST_RESET` 없음. `uq_event_galxe`·`20261020_gacha_claims` 적용. 부정 신청 27건은 아직 남아 있음 |
 | 프론트 (`tina-galxe.heptone.io`) | 2026-10-19 새 화면 배포. **dev API를 부르도록 빌드**했다(운영 API가 옛 코드라서). 그래서 지금은 **devnet**으로 동작한다(2026-10-20). 운영 API를 올린 뒤에는 `VITE_API_BASE` 없이 다시 빌드해 배포한다 |
 
 ### 프론트 사이트 (2026-10-20 개발 사이트 분리)
