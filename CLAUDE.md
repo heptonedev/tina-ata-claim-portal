@@ -200,14 +200,14 @@ gcloud run deploy tina-galxe-api-<env> --image <이미지@digest> --region=asia-
 | 환경 | 2026-10-19 상태 |
 |------|----------------|
 | dev | 가챠 신청·devnet 적용 (리비전 00019). 캠페인 ID·SESSION_SECRET·`CLAIMS_CLOSE_AT=2026-10-31T23:59:59+09:00`·`SOLANA_RPC_URL`(devnet)·`SOLANA_TINA_MINT`(devnet) 설정, `uq_event_galxe`·`20261020_gacha_claims` 적용 |
-| prod | 새 코드 배포 (2026-10-20, 리비전 00008). 옛 신청 경로 제거됨(404). `SESSION_SECRET`(새로 생성)·`GALXE_CLIENT_SECRET`·`GALXE_CAMPAIGN_IDS`·`CLAIMS_CLOSE_AT` 설정, Solana는 기본값(mainnet), `ALLOW_TEST_RESET` 없음. `uq_event_galxe`·`20261020_gacha_claims` 적용. 부정 신청 27건은 아직 남아 있음 |
-| 프론트 (`tina-galxe.heptone.io`) | 2026-10-19 새 화면 배포. **dev API를 부르도록 빌드**했다(운영 API가 옛 코드라서). 그래서 지금은 **devnet**으로 동작한다(2026-10-20). 운영 API를 올린 뒤에는 `VITE_API_BASE` 없이 다시 빌드해 배포한다 |
+| prod | 새 코드 배포 (2026-10-20, 리비전 00008). 옛 신청 경로 제거됨(404). `SESSION_SECRET`(새로 생성)·`GALXE_CLIENT_SECRET`·`GALXE_CAMPAIGN_IDS`·`CLAIMS_CLOSE_AT` 설정, Solana는 기본값(mainnet), `ALLOW_TEST_RESET` 없음. `uq_event_galxe`·`20261020_gacha_claims` 적용. 부정 신청 27건은 2026-10-20 삭제(백업 테이블 `event_claims_fraud_20261020`) |
+| 프론트 (`tina-galxe.heptone.io`) | 2026-10-20 운영 API·mainnet으로 배포. 개발 테스트는 `tina-galxe-dev.web.app` |
 
 ### 프론트 사이트 (2026-10-20 개발 사이트 분리)
 | 사이트 | 용도 | API·네트워크 | 배포 |
 |--------|------|-------------|------|
 | `https://tina-galxe-dev.web.app` | 개발 | dev API · devnet | `npm run deploy:dev` (Firebase `tina-airdrop-event` 프로젝트, 사이트 `tina-galxe-dev`) |
-| `https://tina-galxe.heptone.io` | 운영 | 운영 API · mainnet (예정) | `deploy-ec2.sh` (EC2). **운영 API가 준비될 때까지는 dev API·devnet으로 빌드된 상태** |
+| `https://tina-galxe.heptone.io` | 운영 | 운영 API · mainnet | `VITE_API_BASE` 없이 `deploy-ec2.sh` (EC2). 2026-10-20 운영 빌드로 배포 |
 
 Galxe 로그인 후 돌아오는 주소(`GALXE_REDIRECT_URI`)는 **지금 열린 사이트 주소**(`window.location.origin + "/"`)다.
 그래서 각 사이트 주소가 Galxe OAuth 앱에 redirect URI로 등록돼 있어야 한다.
@@ -218,7 +218,7 @@ Galxe에 추가를 요청해야 한다(Authorize HTTP 438 문의와 함께).
 ```bash
 # dev API를 부르도록 빌드해서 배포 (deploy-ec2.sh 와 같은 과정)
 VITE_API_BASE=https://tina-galxe-api-dev-398996508761.asia-northeast3.run.app bash deploy-ec2.sh
-# 직전 버전으로 되돌리기 (서버에 백업해 둠, VPN 필요). 백업: .bak-20261019(새 화면 이전), .bak-20261019-popup(팝업 이전), .bak-20261019-ata(ATA 단계 이전), .bak-20261019-deadline(마감일 표시 이전), .bak-20261020-devnet(devnet 전환 이전)
+# 직전 버전으로 되돌리기 (서버에 백업해 둠, VPN 필요). 백업: .bak-20261019(새 화면 이전), .bak-20261019-popup(팝업 이전), .bak-20261019-ata(ATA 단계 이전), .bak-20261019-deadline(마감일 표시 이전), .bak-20261020-devnet(devnet 전환 이전), .bak-20261020-prod(운영 빌드 배포 이전)
 ssh -i ~/.ssh/heptone-dev.pem ec2-user@172.31.39.223 \
   "rm -rf /srv/tina-galxe-page && cp -a /srv/tina-galxe-page.bak-20261019 /srv/tina-galxe-page && sudo systemctl restart tina-galxe"
 ```
@@ -250,8 +250,9 @@ ssh -i ~/.ssh/heptone-dev.pem ec2-user@172.31.39.223 \
 | `DB_*` | ✅ | Cloud SQL `tina_events` |
 
 ### 운영 데이터 주의
-`event_claims`에는 옛 경로로 들어온 **부정 신청**이 dev·prod 모두 섞여 있다(2026-10-18 공격, 1,000,000 TINA 등).
-`galxe_id`가 NULL인 행이 그것이다. 이 명단으로 지급하기 전에 반드시 정리해야 한다.
+옛 경로로 들어온 **부정 신청**(2026-10-18 공격, 1,000,000 TINA 등, `galxe_id`·`gacha_address`가 NULL)은
+prod에서 2026-10-20 27건 모두 삭제했다. 지운 행은 prod `tina_events.event_claims_fraud_20261020`에 남겨 뒀다.
+dev DB에는 아직 남아 있다(테스트 데이터라 지급과 무관).
 
 ## 주의사항
 - 공용 Solana RPC는 403 차단되므로 별도 RPC 사용 필수
