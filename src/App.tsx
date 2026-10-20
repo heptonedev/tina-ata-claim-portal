@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import AccountPanel from "@/components/AccountPanel";
+import DevnetTools, { SHOW_DEVNET_TOOLS } from "@/components/DevnetTools";
 import Button from "@/components/Button";
 import Note from "@/components/Note";
 import RouteStop, { type StopState } from "@/components/RouteStop";
@@ -116,6 +117,7 @@ export default function App() {
 
         <div className="lg:pt-3">
           <AccountPanel session={session} campaigns={campaigns} closesAt={closesAt} />
+          {SHOW_DEVNET_TOOLS && <DevnetTools refreshKey={tokenAccount.status} onChanged={() => void tokenAccount.recheck()} />}
         </div>
       </main>
     </div>
