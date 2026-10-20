@@ -4,6 +4,7 @@ import { EVENT_NAME, EVENT_NAMES, getClaimsCloseAt } from "../event.js";
 import { GachaUnavailableError, getGachaWallet } from "../gacha.js";
 import { exchangeCodeForUser, GalxeUnavailableError, getCampaignIds, getCampaignInfo, getCampaignPoints, isEligible } from "../galxe.js";
 import { issueSession } from "../session.js";
+import { sessionLimiter } from "../rate-limit.js";
 
 const router = Router();
 
@@ -25,7 +26,7 @@ router.get("/galxe/campaigns", async (_req, res) => {
 });
 
 // POST /api/auth/galxe/session — Galxe 로그인 code 로 대상자 여부를 확인하고 신청용 세션을 발급한다
-router.post("/galxe/session", async (req, res) => {
+router.post("/galxe/session", sessionLimiter, async (req, res) => {
   const { code } = req.body ?? {};
   if (!code || typeof code !== "string") {
     res.status(400).json({ error: "code is required" });
@@ -80,7 +81,7 @@ router.post("/galxe/session", async (req, res) => {
 
 // POST /api/auth/gacha/session — 가챠 로그인 토큰으로 가챠 포인트를 확인하고 신청용 세션을 발급한다.
 // 가챠 토큰은 가챠 백엔드에 확인만 하고 저장하지 않는다.
-router.post("/gacha/session", async (req, res) => {
+router.post("/gacha/session", sessionLimiter, async (req, res) => {
   const { gachaToken } = req.body ?? {};
   if (!gachaToken || typeof gachaToken !== "string" || gachaToken.length > 4096) {
     res.status(400).json({ error: "gachaToken is required" });

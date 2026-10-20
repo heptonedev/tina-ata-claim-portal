@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS event_claims (
   requested_at   DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   completed_at   DATETIME       NULL,
   tx_signature   VARCHAR(128)   NULL,
+  client_ip      VARCHAR(45)    NULL,
+  user_agent     VARCHAR(255)   NULL,
   created_at     DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at     DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_event_wallet (event_name, wallet_address),
@@ -22,5 +24,6 @@ CREATE TABLE IF NOT EXISTS event_claims (
   INDEX idx_event_name (event_name),
   UNIQUE KEY uq_event_galxe (event_name, galxe_id),
   UNIQUE KEY uq_event_gacha (event_name, gacha_address),
-  INDEX idx_requested_at (requested_at)
+  INDEX idx_requested_at (requested_at),
+  INDEX idx_client_ip (client_ip)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

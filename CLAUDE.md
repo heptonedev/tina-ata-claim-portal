@@ -175,8 +175,12 @@ devnet 빌드 화면(로컬·`tina-galxe-dev.web.app`·`tinaim.web.app`)에 "Res
 - **중복 방지**: 지갑당 1회 `(event_name, wallet_address)`, Galxe 계정당 1회 `(event_name, galxe_id)` UNIQUE.
   `uq_event_galxe`는 `api-server/migrations/20261019_unique_galxe_id.sql`로 dev·prod DB에 적용해야 한다
 - **지급 수량은 신청자가 정하지 않는다** (`token_amount` 0, 지급 기준이 정해지면 서버에서 채운다)
+- **가챠 신청은 가챠 지갑으로만** 받는다 (`walletAddress`가 세션의 가챠 지갑과 다르면 403). 가챠 로그인 토큰을 훔쳐도 다른 지갑으로 신청할 수 없다
+- **요청 횟수 제한** (`rate-limit.ts`, IP당 분당): API 전체 300, 로그인 세션 발급 30, 신청 20. Cloud Run 인스턴스별로 센다.
+  IP는 `trust proxy = 1`로 Cloud Run이 붙인 실제 접속 IP를 쓴다 — 사용자가 `X-Forwarded-For`를 위조해도 한도를 피할 수 없다(2026-10-20 검증)
+- **신청 IP·User-Agent 기록** (`client_ip`, `user_agent`, `migrations/20261020_claim_client_info.sql`). 지급 전 다계정(시빌) 분석용
 - **CORS**는 브라우저만 막는다. 보안은 위 서버 검증에 의존한다
-- Galxe 사용자 정보(이메일·SNS)는 저장하지 않는다
+- Galxe 사용자 정보(이메일·SNS)는 저장하지 않는다. 저장하는 개인 식별 정보는 지갑 주소, Galxe ID, 신청 IP·User-Agent뿐이다
 
 ### API 배포 (로컬 Docker 없이)
 `deploy-cloudrun.sh`는 로컬 Docker가 필요하다. Docker 없이 배포할 때는 이미지만 Cloud Build로 만들고
@@ -199,8 +203,8 @@ gcloud run deploy tina-galxe-api-<env> --image <이미지@digest> --region=asia-
 
 | 환경 | 2026-10-19 상태 |
 |------|----------------|
-| dev | 가챠 신청·devnet 적용 (리비전 00019). 캠페인 ID·SESSION_SECRET·`CLAIMS_CLOSE_AT=2026-10-31T23:59:59+09:00`·`SOLANA_RPC_URL`(devnet)·`SOLANA_TINA_MINT`(devnet) 설정, `uq_event_galxe`·`20261020_gacha_claims` 적용 |
-| prod | 새 코드 배포 (2026-10-20, 리비전 00008). 옛 신청 경로 제거됨(404). `SESSION_SECRET`(새로 생성)·`GALXE_CLIENT_SECRET`·`GALXE_CAMPAIGN_IDS`·`CLAIMS_CLOSE_AT` 설정, Solana는 기본값(mainnet), `ALLOW_TEST_RESET` 없음. `uq_event_galxe`·`20261020_gacha_claims` 적용. 부정 신청 27건은 2026-10-20 삭제(백업 테이블 `event_claims_fraud_20261020`) |
+| dev | 가챠 신청·devnet 적용 (리비전 00019). 캠페인 ID·SESSION_SECRET·`CLAIMS_CLOSE_AT=2026-10-31T23:59:59+09:00`·`SOLANA_RPC_URL`(devnet)·`SOLANA_TINA_MINT`(devnet) 설정, `uq_event_galxe`·`20261020_gacha_claims` 적용 · `20261020_claim_client_info` 적용, 리비전 00022 |
+| prod | 새 코드 배포 (2026-10-20, 리비전 00008). 옛 신청 경로 제거됨(404). `SESSION_SECRET`(새로 생성)·`GALXE_CLIENT_SECRET`·`GALXE_CAMPAIGN_IDS`·`CLAIMS_CLOSE_AT` 설정, Solana는 기본값(mainnet), `ALLOW_TEST_RESET` 없음. `uq_event_galxe`·`20261020_gacha_claims` 적용. 부정 신청 27건은 2026-10-20 삭제(백업 테이블 `event_claims_fraud_20261020`) · `20261020_claim_client_info` 적용, 리비전 00009(가챠 지갑 고정·요청 제한·IP 기록) |
 | 프론트 (`tina-galxe.heptone.io`) | 2026-10-20 운영 API·mainnet으로 배포. 개발 테스트는 `tina-galxe-dev.web.app` |
 
 ### 프론트 사이트 (2026-10-20 개발 사이트 분리)

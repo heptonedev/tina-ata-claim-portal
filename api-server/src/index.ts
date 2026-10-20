@@ -5,8 +5,12 @@ import airdropRouter from "./routes/airdrop.js";
 import authRouter from "./routes/auth.js";
 import claimsRouter from "./routes/claims.js";
 import testRouter, { TEST_RESET_ENABLED } from "./routes/test.js";
+import { apiLimiter } from "./rate-limit.js";
 
 const app = express();
+// Cloud Run 앞단(Google Front End)이 X-Forwarded-For 맨 끝에 실제 접속 IP 를 붙인다.
+// 1 hop 만 믿어서 사용자가 직접 넣은 X-Forwarded-For 값으로 IP 를 속일 수 없게 한다.
+app.set("trust proxy", 1);
 const PORT = Number(process.env.PORT) || 8080;
 
 // Cloud Run(dev·prod)에서는 세션 서명 키 없이 뜨지 않는다. 인스턴스마다 다른 키면 세션이 서로 깨진다.
@@ -54,6 +58,7 @@ app.get("/health", (_req, res) => {
 });
 
 // Routes
+app.use("/api", apiLimiter);
 app.use("/api/airdrop", airdropRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/claims", claimsRouter);

@@ -4,6 +4,7 @@ import { claimsClosed, EVENT_NAMES, TINA_PER_POINT } from "../event.js";
 import { verifyClaimSignature } from "../claim-signature.js";
 import { verifySession } from "../session.js";
 import { hasTinaTokenAccount } from "../token-account.js";
+import { claimLimiter } from "../rate-limit.js";
 
 const router = Router();
 
@@ -11,7 +12,7 @@ const router = Router();
 // 지급 수량은 신청자가 정하지 않는다. 세션 발급 때 확인한 포인트 × TINA_PER_POINT 로 서버가 정한다
 // (지급 전에 마감 시점 포인트로 다시 확인한다).
 // 신청 지갑에는 TINA 토큰 계정(ATA)이 있어야 한다 (신청자가 직접 만든다).
-router.post("/", async (req, res) => {
+router.post("/", claimLimiter, async (req, res) => {
   const { sessionToken, walletAddress, message, signature } = req.body ?? {};
 
   // CLAIMS_CLOSE_AT 이후에는 신청을 받지 않는다
@@ -33,6 +34,12 @@ router.post("/", async (req, res) => {
   }
   if (typeof walletAddress !== "string" || typeof message !== "string" || typeof signature !== "string") {
     res.status(400).json({ error: "walletAddress, message and signature are required" });
+    return;
+  }
+
+  // 가챠 신청은 가챠 지갑으로만 받는다. 가챠 로그인 토큰을 훔쳐도 다른 지갑으로 신청할 수 없게 한다.
+  if (session.source === "gacha" && walletAddress !== session.account) {
+    res.status(403).json({ error: "Claim with your Gacha wallet. TINA is sent to the wallet you used for the Gacha event." });
     return;
   }
 
@@ -75,11 +82,11 @@ router.post("/", async (req, res) => {
 
     const tokenAmount = session.points * TINA_PER_POINT;
     const [result] = await pool.query(
-      `INSERT INTO event_claims (event_name, wallet_address, ${accountColumn}, points, galxe_user_data, token_amount, status, requested_at)
-       VALUES (?, ?, ?, ?, NULL, ?, 'pending', NOW())`,
-      [eventName, walletAddress, session.account, session.points, tokenAmount],
+      `INSERT INTO event_claims (event_name, wallet_address, ${accountColumn}, points, galxe_user_data, token_amount, status, requested_at, client_ip, user_agent)
+       VALUES (?, ?, ?, ?, NULL, ?, 'pending', NOW(), ?, ?)`,
+      [eventName, walletAddress, session.account, session.points, tokenAmount, (req.ip ?? "").slice(0, 45) || null, (req.get("user-agent") ?? "").slice(0, 255) || null],
     );
-    console.log(`claim saved: id=${(result as any).insertId} source=${session.source} account=${session.account} wallet=${walletAddress} points=${session.points}`);
+    console.log(`claim saved: id=${(result as any).insertId} source=${session.source} account=${session.account} wallet=${walletAddress} points=${session.points} ip=${req.ip}`);
 
     res.status(201).json({ claimId: (result as any).insertId, walletAddress, status: "pending", tokenAmount });
   } catch (err) {
