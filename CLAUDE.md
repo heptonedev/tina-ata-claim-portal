@@ -193,9 +193,9 @@ gcloud run deploy tina-galxe-api-<env> --image <이미지@digest> --region=asia-
 
 | 환경 | 2026-10-19 상태 |
 |------|----------------|
-| dev | 신청자 ATA 생성·온체인 확인까지 배포 (리비전 00016), 캠페인 ID·SESSION_SECRET 설정, `uq_event_galxe` 적용, `CLAIMS_CLOSE_AT=2026-10-31T23:59:59+09:00`, 마감일 표시 (리비전 00018) |
-| prod | **옛 코드 그대로** (옛 신청 경로 열려 있음), `GALXE_CLIENT_SECRET`·`SESSION_SECRET`·`CLAIMS_CLOSE_AT` 없음, 마이그레이션 미적용 |
-| 프론트 (`tina-galxe.heptone.io`) | 2026-10-19 새 화면 배포. **dev API를 부르도록 빌드**했다(운영 API가 옛 코드라서). 운영 API를 올린 뒤에는 `VITE_API_BASE` 없이 다시 빌드해 배포한다 |
+| dev | 가챠 신청·devnet 적용 (리비전 00019). 캠페인 ID·SESSION_SECRET·`CLAIMS_CLOSE_AT=2026-10-31T23:59:59+09:00`·`SOLANA_RPC_URL`(devnet)·`SOLANA_TINA_MINT`(devnet) 설정, `uq_event_galxe`·`20261020_gacha_claims` 적용 |
+| prod | **옛 코드 그대로** (옛 신청 경로 열려 있음), `GALXE_CLIENT_SECRET`·`SESSION_SECRET`·`CLAIMS_CLOSE_AT` 없음, 마이그레이션 둘 다 미적용 (`uq_event_galxe`, `20261020_gacha_claims`) |
+| 프론트 (`tina-galxe.heptone.io`) | 2026-10-19 새 화면 배포. **dev API를 부르도록 빌드**했다(운영 API가 옛 코드라서). 그래서 지금은 **devnet**으로 동작한다(2026-10-20). 운영 API를 올린 뒤에는 `VITE_API_BASE` 없이 다시 빌드해 배포한다 |
 
 Galxe OAuth 리디렉션 주소로는 `https://tina-galxe.heptone.io/`만 등록돼 있다. `localhost:5173`은 등록돼 있지 않아
 로컬에서는 Galxe 로그인 후 돌아오지 않는다. 실제 로그인 테스트는 운영 도메인에서 한다.
@@ -204,7 +204,7 @@ Galxe OAuth 리디렉션 주소로는 `https://tina-galxe.heptone.io/`만 등록
 ```bash
 # dev API를 부르도록 빌드해서 배포 (deploy-ec2.sh 와 같은 과정)
 VITE_API_BASE=https://tina-galxe-api-dev-398996508761.asia-northeast3.run.app bash deploy-ec2.sh
-# 직전 버전으로 되돌리기 (서버에 백업해 둠, VPN 필요). 백업: .bak-20261019(새 화면 이전), .bak-20261019-popup(팝업 이전), .bak-20261019-ata(ATA 단계 이전), .bak-20261019-deadline(마감일 표시 이전)
+# 직전 버전으로 되돌리기 (서버에 백업해 둠, VPN 필요). 백업: .bak-20261019(새 화면 이전), .bak-20261019-popup(팝업 이전), .bak-20261019-ata(ATA 단계 이전), .bak-20261019-deadline(마감일 표시 이전), .bak-20261020-devnet(devnet 전환 이전)
 ssh -i ~/.ssh/heptone-dev.pem ec2-user@172.31.39.223 \
   "rm -rf /srv/tina-galxe-page && cp -a /srv/tina-galxe-page.bak-20261019 /srv/tina-galxe-page && sudo systemctl restart tina-galxe"
 ```
