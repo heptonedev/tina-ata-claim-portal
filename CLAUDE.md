@@ -197,8 +197,16 @@ gcloud run deploy tina-galxe-api-<env> --image <이미지@digest> --region=asia-
 | prod | **옛 코드 그대로** (옛 신청 경로 열려 있음), `GALXE_CLIENT_SECRET`·`SESSION_SECRET`·`CLAIMS_CLOSE_AT` 없음, 마이그레이션 둘 다 미적용 (`uq_event_galxe`, `20261020_gacha_claims`) |
 | 프론트 (`tina-galxe.heptone.io`) | 2026-10-19 새 화면 배포. **dev API를 부르도록 빌드**했다(운영 API가 옛 코드라서). 그래서 지금은 **devnet**으로 동작한다(2026-10-20). 운영 API를 올린 뒤에는 `VITE_API_BASE` 없이 다시 빌드해 배포한다 |
 
-Galxe OAuth 리디렉션 주소로는 `https://tina-galxe.heptone.io/`만 등록돼 있다. `localhost:5173`은 등록돼 있지 않아
-로컬에서는 Galxe 로그인 후 돌아오지 않는다. 실제 로그인 테스트는 운영 도메인에서 한다.
+### 프론트 사이트 (2026-10-20 개발 사이트 분리)
+| 사이트 | 용도 | API·네트워크 | 배포 |
+|--------|------|-------------|------|
+| `https://tina-galxe-dev.web.app` | 개발 | dev API · devnet | `npm run deploy:dev` (Firebase `tina-airdrop-event` 프로젝트, 사이트 `tina-galxe-dev`) |
+| `https://tina-galxe.heptone.io` | 운영 | 운영 API · mainnet (예정) | `deploy-ec2.sh` (EC2). **운영 API가 준비될 때까지는 dev API·devnet으로 빌드된 상태** |
+
+Galxe 로그인 후 돌아오는 주소(`GALXE_REDIRECT_URI`)는 **지금 열린 사이트 주소**(`window.location.origin + "/"`)다.
+그래서 각 사이트 주소가 Galxe OAuth 앱에 redirect URI로 등록돼 있어야 한다.
+2026-10-20 기준 등록된 것은 `https://tina-galxe.heptone.io/`뿐이다. `https://tina-galxe-dev.web.app/`, `http://localhost:5173/`은
+Galxe에 추가를 요청해야 한다(Authorize HTTP 438 문의와 함께).
 
 프론트 배포·되돌리기:
 ```bash

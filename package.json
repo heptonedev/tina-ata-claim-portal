@@ -6,6 +6,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "deploy:dev": "VITE_API_BASE=https://tina-galxe-api-dev-398996508761.asia-northeast3.run.app npm run build && firebase deploy --only hosting:dev",
     "lint": "eslint"
   },
   "dependencies": {

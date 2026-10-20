@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "tina-airdrop-event"
+  },
+  "targets": {
+    "tina-airdrop-event": {
+      "hosting": {
+        "dev": ["tina-galxe-dev"]
+      }
+    }
+  }
+}

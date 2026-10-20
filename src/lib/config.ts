@@ -6,7 +6,9 @@ export const API_BASE: string = import.meta.env.VITE_API_BASE || (import.meta.en
 
 export const GALXE_CLIENT_ID = "2129a0a0f3b7f593e9923cfd745dd665af85fb166b5a4cf93ebeda38ea58b84f";
 export const GALXE_OAUTH_URL = "https://app.galxe.com/oauth";
-export const GALXE_REDIRECT_URI = import.meta.env.DEV ? "http://localhost:5173/" : "https://tina-galxe.heptone.io/";
+// Galxe 로그인 후 돌아올 주소는 지금 열린 사이트다 (로컬, Firebase 개발 사이트, 운영 EC2).
+// 각 주소가 Galxe OAuth 앱에 redirect URI 로 등록돼 있어야 한다.
+export const GALXE_REDIRECT_URI = `${window.location.origin}/`;
 export const GALXE_SCOPES = "GalxeID SolanaAddress EVMAddress Email Twitter Discord Github Telegram";
 
 // dev API 는 devnet 에서 ATA 를 확인한다 (테스트에 실제 SOL 이 들지 않게). 프론트도 API 에 맞춘다.

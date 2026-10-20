@@ -17,6 +17,7 @@ if ((process.env.NODE_ENV === "dev" || process.env.NODE_ENV === "prod") && (proc
 app.use(cors({
   origin: [
     "https://tina-galxe.heptone.io",
+    "https://tina-galxe-dev.web.app", // Firebase 개발 사이트
     "http://localhost:5173",
     // 홈페이지 가챠 이벤트 페이지의 에어드롭 신청 (운영 tina.im, 개발 Firebase, 로컬)
     "https://tina.im",
