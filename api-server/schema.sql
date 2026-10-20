@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS event_claims (
   event_name     VARCHAR(100)   NOT NULL DEFAULT 'galxe_airdrop',
   wallet_address VARCHAR(64)    NOT NULL,
   galxe_id       VARCHAR(100)   NULL,
+  gacha_address  VARCHAR(64)    NULL,
+  points         INT UNSIGNED   NULL,
   galxe_user_data JSON          NULL,
   token_amount   DECIMAL(20, 8) NOT NULL DEFAULT 0,
   status         ENUM('pending', 'processing', 'completed', 'failed') NOT NULL DEFAULT 'pending',
@@ -19,5 +21,6 @@ CREATE TABLE IF NOT EXISTS event_claims (
   INDEX idx_status (status),
   INDEX idx_event_name (event_name),
   UNIQUE KEY uq_event_galxe (event_name, galxe_id),
+  UNIQUE KEY uq_event_gacha (event_name, gacha_address),
   INDEX idx_requested_at (requested_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

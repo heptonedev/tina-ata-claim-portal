@@ -1,6 +1,7 @@
 import { Router } from "express";
 import pool from "../db.js";
-import { EVENT_NAME, getClaimsCloseAt } from "../event.js";
+import { EVENT_NAME, EVENT_NAMES, getClaimsCloseAt } from "../event.js";
+import { GachaUnavailableError, getGachaWallet } from "../gacha.js";
 import { exchangeCodeForUser, GalxeUnavailableError, getCampaignIds, getCampaignInfo, getCampaignPoints, isEligible } from "../galxe.js";
 import { issueSession } from "../session.js";
 
@@ -45,6 +46,7 @@ router.post("/galxe/session", async (req, res) => {
 
     const campaigns = await getCampaignPoints(user.addresses);
     const eligible = isEligible(campaigns);
+    const points = campaigns.reduce((sum, c) => sum + c.points, 0);
 
     const [rows] = await pool.query(
       "SELECT id, wallet_address, status, requested_at FROM event_claims WHERE event_name = ? AND galxe_id = ? LIMIT 1",
@@ -52,7 +54,7 @@ router.post("/galxe/session", async (req, res) => {
     );
     const existing = Array.isArray(rows) && rows.length > 0 ? (rows[0] as Record<string, unknown>) : null;
 
-    const { token } = issueSession(user.galxeId, eligible);
+    const { token } = issueSession("galxe", user.galxeId, eligible ? points : 0);
     console.log(`galxe session: galxeId=${user.galxeId} addresses=${user.addresses.length} eligible=${eligible} claimed=${!!existing}`);
 
     res.json({
@@ -72,6 +74,51 @@ router.post("/galxe/session", async (req, res) => {
       return;
     }
     console.error("Galxe session error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /api/auth/gacha/session — 가챠 로그인 토큰으로 가챠 포인트를 확인하고 신청용 세션을 발급한다.
+// 가챠 토큰은 가챠 백엔드에 확인만 하고 저장하지 않는다.
+router.post("/gacha/session", async (req, res) => {
+  const { gachaToken } = req.body ?? {};
+  if (!gachaToken || typeof gachaToken !== "string" || gachaToken.length > 4096) {
+    res.status(400).json({ error: "gachaToken is required" });
+    return;
+  }
+
+  try {
+    const wallet = await getGachaWallet(gachaToken);
+    if (!wallet) {
+      res.status(401).json({ error: "Your Gacha sign-in has expired. Connect your wallet again." });
+      return;
+    }
+
+    const [rows] = await pool.query(
+      "SELECT wallet_address, status, requested_at FROM event_claims WHERE event_name = ? AND gacha_address = ? LIMIT 1",
+      [EVENT_NAMES.gacha, wallet.address],
+    );
+    const existing = Array.isArray(rows) && rows.length > 0 ? (rows[0] as Record<string, unknown>) : null;
+
+    const { token, session } = issueSession("gacha", wallet.address, wallet.totalPoints);
+    console.log(`gacha session: address=${wallet.address} points=${wallet.totalPoints} claimed=${!!existing}`);
+
+    res.json({
+      sessionToken: token,
+      gachaAddress: wallet.address,
+      points: wallet.totalPoints,
+      eligible: session.eligible,
+      claim: existing
+        ? { walletAddress: existing.wallet_address, status: existing.status, requestedAt: existing.requested_at }
+        : null,
+    });
+  } catch (err) {
+    if (err instanceof GachaUnavailableError) {
+      console.error("Gacha unavailable:", err.message);
+      res.status(503).json({ error: "Couldn't reach the Gacha server to check your points. Try again in a minute." });
+      return;
+    }
+    console.error("Gacha session error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

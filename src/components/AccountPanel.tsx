@@ -1,5 +1,5 @@
 import type { CampaignInfo, GalxeSession } from "@/lib/api";
-import { TINA_MINT } from "@/lib/config";
+import { SOLANA_NETWORK, TINA_MINT } from "@/lib/config";
 import { formatDeadline, shortAddress } from "@/lib/format";
 
 // 오른쪽 패널: 대상 Galxe 캠페인과 (로그인 후) 캠페인별 포인트를 보여준다.
@@ -72,7 +72,7 @@ export default function AccountPanel({ session, campaigns, closesAt }: Props) {
         <dt className="text-muted">Contract</dt>
         <dd className="text-right">
           <a
-            href={`https://solscan.io/token/${TINA_MINT}`}
+            href={`https://solscan.io/token/${TINA_MINT}${SOLANA_NETWORK === "devnet" ? "?cluster=devnet" : ""}`}
             target="_blank"
             rel="noopener noreferrer"
             className="underline decoration-contour-strong underline-offset-4 hover:decoration-tina-soft"

@@ -9,5 +9,12 @@ export const GALXE_OAUTH_URL = "https://app.galxe.com/oauth";
 export const GALXE_REDIRECT_URI = import.meta.env.DEV ? "http://localhost:5173/" : "https://tina-galxe.heptone.io/";
 export const GALXE_SCOPES = "GalxeID SolanaAddress EVMAddress Email Twitter Discord Github Telegram";
 
-export const TINA_MINT = "BJUP7hZoN8GFunH3ucrdBjuphyz2Ryg1R8pt3D4tm6wZ";
-export const RPC_ENDPOINT = "https://solana-mainnet.g.allthatnode.com/full/json_rpc/a27dfe38723a4a2c9852ece82e92f2ed";
+// dev API 는 devnet 에서 ATA 를 확인한다 (테스트에 실제 SOL 이 들지 않게). 프론트도 API 에 맞춘다.
+export const SOLANA_NETWORK: "mainnet" | "devnet" = API_BASE === DEV_API ? "devnet" : "mainnet";
+
+export const TINA_MINT =
+  SOLANA_NETWORK === "devnet" ? "4vwPq1eehywTuLFPqo7muAYAbF9cjjqVhv2h4EFqc1M5" : "BJUP7hZoN8GFunH3ucrdBjuphyz2Ryg1R8pt3D4tm6wZ";
+export const RPC_ENDPOINT =
+  SOLANA_NETWORK === "devnet"
+    ? "https://solana-devnet.g.allthatnode.com/full/json_rpc/a27dfe38723a4a2c9852ece82e92f2ed"
+    : "https://solana-mainnet.g.allthatnode.com/full/json_rpc/a27dfe38723a4a2c9852ece82e92f2ed";

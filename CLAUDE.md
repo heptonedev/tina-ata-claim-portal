@@ -108,7 +108,8 @@ api-server/src/
 |--------|------|------|
 | `GET` | `/api/auth/galxe/campaigns` | 대상 캠페인 이름·Galxe 링크 (10분 캐시), 신청 마감 `closesAt` |
 | `POST` | `/api/auth/galxe/session` | Galxe 로그인 code → 포인트 확인 → 신청 세션 발급 |
-| `POST` | `/api/claims` | 세션 + 지갑 서명으로 신청 |
+| `POST` | `/api/auth/gacha/session` | 홈페이지 가챠 로그인 토큰 → 가챠 백엔드 `/me`로 Lucky Points 확인 → 신청 세션 발급 |
+| `POST` | `/api/claims` | 세션(Galxe·가챠) + 지갑 서명으로 신청 |
 | `GET` | `/api/airdrop/status/:wallet` | 신청 상태 조회 |
 | `GET` | `/health` | 헬스체크 |
 
@@ -133,6 +134,33 @@ api-server/src/
    `pending`으로 저장 (`token_amount`는 0)
 
 ATA 비용은 신청자 부담이다 (2026-10-19 결정). 2026-10-19 이전 화면은 지급 때 만들어 주는 방식이었다.
+
+### 가챠 이벤트 신청 (2026-10-20 추가)
+홈페이지(`/Users/kevin/workspace/tina-homepage`, `/gacha` 페이지의 `GachaAirdrop` 섹션)에서 받는 신청도 이 서버가 받는다.
+Galxe 로그인은 쓰지 않는다.
+1. 홈페이지 가챠 로그인(지갑 서명 → 가챠 JWT)을 그대로 쓴다
+2. `POST /api/auth/gacha/session` — 서버가 가챠 JWT로 `https://tina-gacha-api.tina.im/api/wallets/v1/me`를 불러
+   지갑 주소·`totalPoints`(Lucky Points)를 받는다. 가챠 백엔드가 JWT를 검증하므로 그 주소가 곧 가챠 지갑이다.
+   가챠 JWT는 저장하지 않는다
+3. ATA 만들기 → 서명 후 `/api/claims` (Galxe와 같은 경로·같은 서명 형식). TINA는 가챠 지갑으로 받는다
+
+| 구분 | Galxe | 가챠 |
+|------|-------|------|
+| `event_name` | `galxe_airdrop` | `gacha_airdrop` |
+| 계정당 1회 기준 | `galxe_id` | `gacha_address` |
+| `points` | 두 캠페인 포인트 합계 | Lucky Points |
+
+- **`token_amount = points × 1 TINA`** (2026-10-20 마케팅 확정, `event.ts`의 `TINA_PER_POINT`). 지급 전에 마감 시점 포인트로 다시 확인한다
+- 같은 사람이 Galxe·가챠 두 이벤트에 각각 신청할 수 있다 (이벤트별로 지갑·계정당 1회)
+- `gacha_address`·`points` 컬럼은 `migrations/20261020_gacha_claims.sql`. **새 서버 코드는 이 컬럼에 값을 넣으므로
+  마이그레이션 없이 배포하면 Galxe 신청까지 실패한다.** dev·prod 모두 마이그레이션 → 배포 순서를 지킨다
+
+### 네트워크 (개발은 devnet)
+테스트에 실제 SOL이 들지 않도록 개발 환경은 devnet TINA(`4vwPq1eehywTuLFPqo7muAYAbF9cjjqVhv2h4EFqc1M5`)로 ATA를 확인·생성한다.
+지급은 운영(mainnet)만 해당한다.
+- API: `SOLANA_RPC_URL`·`SOLANA_TINA_MINT` 환경변수 (없으면 mainnet). dev Cloud Run에만 devnet 값을 넣는다
+- 이 프론트: `config.ts`의 `SOLANA_NETWORK` — dev API를 부르게 빌드하면 devnet, 아니면 mainnet
+- 홈페이지: 빌드의 `NEXT_PUBLIC_SOLANA_NETWORK` (Firebase 개발 배포는 devnet, 운영은 mainnet)
 
 ## 보안
 - **신청 경로는 `/api/claims` 하나**이며 Galxe 세션 + 지갑 서명이 모두 있어야 한다
@@ -200,7 +228,9 @@ ssh -i ~/.ssh/heptone-dev.pem ec2-user@172.31.39.223 \
 | `SESSION_SECRET` | ✅ | 32자 이상, 모든 인스턴스 동일. 없으면 dev·prod에서 서버가 뜨지 않는다 (`openssl rand -hex 32`) |
 | `GALXE_CLIENT_SECRET` | ✅ | Galxe OAuth. **2026-10-19 기준 prod Cloud Run에 없음** |
 | `CLAIMS_CLOSE_AT` | | 신청 마감 ISO 시각. **확정: `2026-10-31T23:59:59+09:00`** (10/31 23:59 KST, 2026-10-19 결정). 이후 `/api/claims`는 403. 없으면 마감 없음 |
-| `SOLANA_RPC_URL` | | 신청 지갑의 ATA 확인용 mainnet RPC. 없으면 프론트와 같은 AllThatNode 주소 |
+| `SOLANA_RPC_URL` | | 신청 지갑의 ATA 확인용 RPC. 없으면 mainnet AllThatNode. **dev는 devnet RPC** |
+| `SOLANA_TINA_MINT` | | ATA 확인용 TINA 민트. 없으면 mainnet 민트. **dev는 devnet 민트** `4vwPq…c1M5` |
+| `GACHA_API_URL` | | 가챠 백엔드. 없으면 `https://tina-gacha-api.tina.im` |
 | `GALXE_ACCESS_TOKEN` | | 지금은 불필요. Galxe가 공개 조회를 막으면 설정 (값은 Cloud Run 에만, 리포·채팅 금지) |
 | `DB_*` | ✅ | Cloud SQL `tina_events` |
 

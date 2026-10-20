@@ -18,6 +18,11 @@ app.use(cors({
   origin: [
     "https://tina-galxe.heptone.io",
     "http://localhost:5173",
+    // 홈페이지 가챠 이벤트 페이지의 에어드롭 신청 (운영 tina.im, 개발 Firebase, 로컬)
+    "https://tina.im",
+    "https://www.tina.im",
+    "https://tinaim.web.app",
+    "http://localhost:3000",
   ],
   methods: ["GET", "POST"],
   credentials: true,
