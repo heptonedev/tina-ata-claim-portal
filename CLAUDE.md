@@ -245,7 +245,7 @@ ssh -i ~/.ssh/heptone-dev.pem ec2-user@172.31.39.223 \
 | `GALXE_CAMPAIGN_IDS` | ✅ | `GCTRHtYPu2,GCUoHtYCUo`. 비어 있으면 로그인 시 "not open yet" |
 | `SESSION_SECRET` | ✅ | 32자 이상, 모든 인스턴스 동일. 없으면 dev·prod에서 서버가 뜨지 않는다 (`openssl rand -hex 32`) |
 | `GALXE_CLIENT_SECRET` | ✅ | Galxe OAuth. **2026-10-19 기준 prod Cloud Run에 없음** |
-| `CLAIMS_CLOSE_AT` | | 신청 마감 ISO 시각. **확정: `2026-10-31T23:59:59+09:00`** (10/31 23:59 KST, 2026-10-19 결정). 이후 `/api/claims`는 403. 없으면 마감 없음 |
+| `CLAIMS_CLOSE_AT` | | 신청 마감 ISO 시각. **확정: `2026-11-20T23:59:59Z`** (11/20 23:59 UTC. 2026-10-27 갤럭시·가챠 함께 연장, dev 리비전 00023·prod 00010 반영. 이전 값 10/31 23:59 KST). 이후 `/api/claims`는 403. 없으면 마감 없음 |
 | `SOLANA_RPC_URL` | | 신청 지갑의 ATA 확인용 RPC. 없으면 mainnet AllThatNode. **dev는 devnet RPC** |
 | `SOLANA_TINA_MINT` | | ATA 확인용 TINA 민트. 없으면 mainnet 민트. **dev는 devnet 민트** `4vwPq…c1M5` |
 | `ALLOW_TEST_RESET` | | `true`면(그리고 `NODE_ENV=dev`일 때만) `POST /api/test/reset-claim` 연결. 로그인한 계정의 미지급 신청을 지운다. **dev에만 설정, prod 금지** |
