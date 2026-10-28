@@ -178,7 +178,7 @@ devnet 빌드 화면(로컬·`tina-galxe-dev.web.app`·`tinaim.web.app`)에 "Res
 - **가챠 신청은 가챠 지갑으로만** 받는다 (`walletAddress`가 세션의 가챠 지갑과 다르면 403). 가챠 로그인 토큰을 훔쳐도 다른 지갑으로 신청할 수 없다
 - **요청 횟수 제한** (`rate-limit.ts`, IP당 분당): API 전체 300, 로그인 세션 발급 30, 신청 20. Cloud Run 인스턴스별로 센다.
   IP는 `trust proxy = 1`로 Cloud Run이 붙인 실제 접속 IP를 쓴다 — 사용자가 `X-Forwarded-For`를 위조해도 한도를 피할 수 없다(2026-10-20 검증)
-- **신청 IP·User-Agent 기록** (`client_ip`, `user_agent`, `migrations/20261020_claim_client_info.sql`). 지급 전 다계정(시빌) 분석용
+- **신청 IP·User-Agent 기록** (`client_ip`, `user_agent`, `migrations/20261020_claim_client_info.sql`). 지급 전 다계정(시빌) 분석용. 분석 쿼리는 `api-server/sql/sybil-analysis.sql`(조회 전용, 이벤트별로 같은 IP·같은 IP+UA·같은 대역·10분 내 연속 신청·자동화 UA를 점수로 묶음. IP만으로 판단하지 말고 점수 높은 신청을 사람이 확인)
 - **CORS**는 브라우저만 막는다. 보안은 위 서버 검증에 의존한다
 - Galxe 사용자 정보(이메일·SNS)는 저장하지 않는다. 저장하는 개인 식별 정보는 지갑 주소, Galxe ID, 신청 IP·User-Agent뿐이다
 
