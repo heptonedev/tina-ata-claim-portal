@@ -203,9 +203,9 @@ gcloud run deploy tina-galxe-api-<env> --image <이미지@digest> --region=asia-
 
 | 환경 | 2026-10-19 상태 |
 |------|----------------|
-| dev | 가챠 신청·devnet 적용 (리비전 00019). 캠페인 ID·SESSION_SECRET·`CLAIMS_CLOSE_AT=2026-10-31T23:59:59+09:00`·`SOLANA_RPC_URL`(devnet)·`SOLANA_TINA_MINT`(devnet) 설정, `uq_event_galxe`·`20261020_gacha_claims` 적용 · `20261020_claim_client_info` 적용, 리비전 00022 |
-| prod | 새 코드 배포 (2026-10-20, 리비전 00008). 옛 신청 경로 제거됨(404). `SESSION_SECRET`(새로 생성)·`GALXE_CLIENT_SECRET`·`GALXE_CAMPAIGN_IDS`·`CLAIMS_CLOSE_AT` 설정, Solana는 기본값(mainnet), `ALLOW_TEST_RESET` 없음. `uq_event_galxe`·`20261020_gacha_claims` 적용. 부정 신청 27건은 2026-10-20 삭제(백업 테이블 `event_claims_fraud_20261020`) · `20261020_claim_client_info` 적용, 리비전 00009(가챠 지갑 고정·요청 제한·IP 기록) |
-| 프론트 (`tina-galxe.heptone.io`) | 2026-10-20 운영 API·mainnet으로 배포. 개발 테스트는 `tina-galxe-dev.web.app` |
+| dev | 가챠 신청·devnet 적용 (리비전 00019). 캠페인 ID·SESSION_SECRET·`CLAIMS_CLOSE_AT=2026-10-31T23:59:59+09:00`·`SOLANA_RPC_URL`(devnet)·`SOLANA_TINA_MINT`(devnet) 설정, `uq_event_galxe`·`20261020_gacha_claims` 적용 · `20261020_claim_client_info` 적용, 리비전 00022 · 2026-10-28 리비전 00026(prod 와 같은 코드 + `TEST_GALXE_POINTS`) |
+| prod | 새 코드 배포 (2026-10-20, 리비전 00008). 옛 신청 경로 제거됨(404). `SESSION_SECRET`(새로 생성)·`GALXE_CLIENT_SECRET`·`GALXE_CAMPAIGN_IDS`·`CLAIMS_CLOSE_AT` 설정, Solana는 기본값(mainnet), `ALLOW_TEST_RESET` 없음. `uq_event_galxe`·`20261020_gacha_claims` 적용. 부정 신청 27건은 2026-10-20 삭제(백업 테이블 `event_claims_fraud_20261020`) · `20261020_claim_client_info` 적용, 리비전 00009(가챠 지갑 고정·요청 제한·IP 기록) · 2026-10-28 리비전 00011: 포인트를 조회별 최댓값으로 계산(Galxe ID·주소 어느 것으로 조회해도 계정 전체 포인트가 나와 합산 시 2배), 정확한 ATA 검사, 마감 값 필수(없으면 시작 실패), JSON 오류 응답 |
+| 프론트 (`tina-galxe.heptone.io`) | 2026-10-20 운영 API·mainnet으로 배포. 개발 테스트는 `tina-galxe-dev.web.app` · 2026-10-28 재배포(마감 후 진행 차단, ATA 생성 실패 처리) |
 
 ### 프론트 사이트 (2026-10-20 개발 사이트 분리)
 | 사이트 | 용도 | API·네트워크 | 배포 |
@@ -222,7 +222,7 @@ Galxe에 추가를 요청해야 한다(Authorize HTTP 438 문의와 함께).
 ```bash
 # dev API를 부르도록 빌드해서 배포 (deploy-ec2.sh 와 같은 과정)
 VITE_API_BASE=https://tina-galxe-api-dev-398996508761.asia-northeast3.run.app bash deploy-ec2.sh
-# 직전 버전으로 되돌리기 (서버에 백업해 둠, VPN 필요). 백업: .bak-20261019(새 화면 이전), .bak-20261019-popup(팝업 이전), .bak-20261019-ata(ATA 단계 이전), .bak-20261019-deadline(마감일 표시 이전), .bak-20261020-devnet(devnet 전환 이전), .bak-20261020-prod(운영 빌드 배포 이전)
+# 직전 버전으로 되돌리기 (서버에 백업해 둠, VPN 필요). 백업: .bak-20261019(새 화면 이전), .bak-20261019-popup(팝업 이전), .bak-20261019-ata(ATA 단계 이전), .bak-20261019-deadline(마감일 표시 이전), .bak-20261020-devnet(devnet 전환 이전), .bak-20261020-prod(운영 빌드 배포 이전), .bak-20261028(마감 차단·ATA 실패 처리 배포 이전)
 ssh -i ~/.ssh/heptone-dev.pem ec2-user@172.31.39.223 \
   "rm -rf /srv/tina-galxe-page && cp -a /srv/tina-galxe-page.bak-20261019 /srv/tina-galxe-page && sudo systemctl restart tina-galxe"
 ```
