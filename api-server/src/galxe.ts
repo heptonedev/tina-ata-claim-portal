@@ -123,6 +123,10 @@ export async function getCampaignPoints(lookups: string[], campaignIds = getCamp
     campaignIds.map(async (id) => {
       const targets = lookups.length > 0 ? lookups : [NO_ADDRESS];
       const results = await Promise.all(targets.map((target) => queryCampaignPoints(id, target)));
+      // 조회 대상마다 값이 다르면 주소별로 따로 쌓인 포인트일 수 있다(최댓값이면 적게 잡힌다). 지급 전 대조용으로 남긴다
+      if (lookups.length > 1 && new Set(results.map((r) => r.points)).size > 1) {
+        console.warn(`galxe points mismatch: campaign=${id} galxeId=${lookups[0]} points=${results.map((r) => r.points).join("/")}`);
+      }
       return {
         id,
         name: results.find((r) => r.name)?.name ?? null,
