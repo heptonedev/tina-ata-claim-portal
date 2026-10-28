@@ -249,6 +249,7 @@ ssh -i ~/.ssh/heptone-dev.pem ec2-user@172.31.39.223 \
 | `SOLANA_RPC_URL` | | 신청 지갑의 ATA 확인용 RPC. 없으면 mainnet AllThatNode. **dev는 devnet RPC** |
 | `SOLANA_TINA_MINT` | | ATA 확인용 TINA 민트. 없으면 mainnet 민트. **dev는 devnet 민트** `4vwPq…c1M5` |
 | `ALLOW_TEST_RESET` | | `true`면(그리고 `NODE_ENV=dev`일 때만) `POST /api/test/reset-claim` 연결. 로그인한 계정의 미지급 신청을 지운다. **dev에만 설정, prod 금지** |
+| `TEST_GALXE_POINTS` | | `galxeId:포인트,…` 형식. `NODE_ENV=dev`일 때만 지정한 Galxe ID의 첫 캠페인에 테스트 포인트를 더한다(두 캠페인이 종료돼 새로 포인트를 받을 수 없어서). 2026-10-28 dev에 `fTJpFsiLSESwsfKLjpYRpX:100` 설정(리비전 00024). **prod 금지** |
 | `GACHA_API_URL` | | 가챠 백엔드. 없으면 `https://tina-gacha-api.tina.im` |
 | `GALXE_ACCESS_TOKEN` | | 지금은 불필요. Galxe가 공개 조회를 막으면 설정 (값은 Cloud Run 에만, 리포·채팅 금지) |
 | `DB_*` | ✅ | Cloud SQL `tina_events` |

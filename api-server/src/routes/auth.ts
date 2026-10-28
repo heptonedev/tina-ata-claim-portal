@@ -5,6 +5,7 @@ import { GachaUnavailableError, getGachaWallet } from "../gacha.js";
 import { exchangeCodeForUser, GalxeUnavailableError, getCampaignIds, getCampaignInfo, getCampaignPoints, isEligible } from "../galxe.js";
 import { issueSession } from "../session.js";
 import { sessionLimiter } from "../rate-limit.js";
+import { testPointsFor } from "./test.js";
 
 const router = Router();
 
@@ -46,6 +47,8 @@ router.post("/galxe/session", sessionLimiter, async (req, res) => {
     }
 
     const campaigns = await getCampaignPoints(user.addresses);
+    const testPoints = testPointsFor(user.galxeId);
+    if (testPoints > 0 && campaigns.length > 0) campaigns[0] = { ...campaigns[0], points: campaigns[0].points + testPoints };
     const eligible = isEligible(campaigns);
     const points = campaigns.reduce((sum, c) => sum + c.points, 0);
 
@@ -56,7 +59,9 @@ router.post("/galxe/session", sessionLimiter, async (req, res) => {
     const existing = Array.isArray(rows) && rows.length > 0 ? (rows[0] as Record<string, unknown>) : null;
 
     const { token } = issueSession("galxe", user.galxeId, eligible ? points : 0);
-    console.log(`galxe session: galxeId=${user.galxeId} addresses=${user.addresses.length} eligible=${eligible} claimed=${!!existing}`);
+    console.log(
+      `galxe session: galxeId=${user.galxeId} addresses=${user.addresses.length} eligible=${eligible} claimed=${!!existing}${testPoints > 0 ? ` testPoints=${testPoints}` : ""}`,
+    );
 
     res.json({
       sessionToken: token,
