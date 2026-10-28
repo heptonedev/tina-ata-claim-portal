@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { PublicKey, Transaction } from "@solana/web3.js";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -40,6 +41,7 @@ type Props = {
 export default function DevnetTools({ refreshKey, sessionToken, claimed, onClaimReset, onAccountChanged }: Props) {
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
+  const { setVisible: openWalletModal } = useWalletModal();
   const [account, setAccount] = useState<AccountInfo>({ status: "loading" });
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -113,8 +115,7 @@ export default function DevnetTools({ refreshKey, sessionToken, claimed, onClaim
 
   const canReset = (claimed && !!sessionToken) || account.status === "active";
 
-  if (!publicKey) return null;
-
+  // 신청을 마친 뒤 다시 들어오면 지갑이 연결돼 있지 않다. 카드를 숨기면 리셋할 방법이 없으므로 연결 버튼을 보여준다.
   return (
     <section className="mt-5 rounded-2xl border border-contour bg-panel/60 p-6 backdrop-blur-sm sm:p-7" aria-labelledby="devnet-tools-title">
       <div className="flex flex-wrap items-center gap-3">
@@ -135,11 +136,28 @@ export default function DevnetTools({ refreshKey, sessionToken, claimed, onClaim
         <dd className="text-right">{sessionToken ? (claimed ? "Received" : "Not claimed") : "Sign in to see"}</dd>
         <dt className="text-muted">TINA account</dt>
         <dd className="text-right">
-          {account.status === "loading" ? "Checking…" : account.status === "none" ? "Not created" : `Active · ${account.ui} TINA`}
+          {!publicKey
+            ? "Connect wallet to see"
+            : account.status === "loading"
+              ? "Checking…"
+              : account.status === "none"
+                ? "Not created"
+                : `Active · ${account.ui} TINA`}
         </dd>
       </dl>
 
-      {canReset && (
+      {!publicKey ? (
+        <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
+          <p className="mr-auto text-sm text-muted">Connect your wallet to reset.</p>
+          <button
+            type="button"
+            onClick={() => openWalletModal(true)}
+            className="min-h-9 rounded-lg border border-contour-strong px-4 text-sm font-semibold text-paper transition-colors hover:border-paper"
+          >
+            Connect wallet
+          </button>
+        </div>
+      ) : canReset && (
         <div className="mt-4 flex flex-wrap items-center justify-end gap-1">
           {confirming ? (
             <>
