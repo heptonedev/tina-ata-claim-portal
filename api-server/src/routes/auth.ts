@@ -46,7 +46,7 @@ router.post("/galxe/session", sessionLimiter, async (req, res) => {
       return;
     }
 
-    const campaigns = await getCampaignPoints(user.addresses);
+    const campaigns = await getCampaignPoints([user.galxeId, ...user.addresses]);
     const testPoints = testPointsFor(user.galxeId);
     if (testPoints > 0 && campaigns.length > 0) campaigns[0] = { ...campaigns[0], points: campaigns[0].points + testPoints };
     const eligible = isEligible(campaigns);

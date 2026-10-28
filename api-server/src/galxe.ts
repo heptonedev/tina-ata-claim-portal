@@ -1,5 +1,5 @@
 // Galxe OAuth 와 공개 GraphQL API 연동.
-// 포인트는 Galxe ID 가 아니라 Galxe 계정에 연결된 지갑 주소(EVM·Solana) 기준으로 쌓인다.
+// 포인트는 Galxe 계정 단위다. 연결 주소(EVM·Solana)나 Galxe ID 어느 것으로 조회해도 같은 계정 포인트가 나온다.
 
 const GALXE_CLIENT_ID = process.env.GALXE_CLIENT_ID || "2129a0a0f3b7f593e9923cfd745dd665af85fb166b5a4cf93ebeda38ea58b84f";
 const GALXE_TOKEN_URL = "https://api.galxe.com/oauth/auth/2/token";
@@ -113,17 +113,21 @@ async function queryCampaignPoints(campaignId: string, address: string): Promise
   };
 }
 
-/** 캠페인마다 사용자의 연결 주소들에서 받은 포인트를 합산한다. */
-export async function getCampaignPoints(addresses: string[], campaignIds = getCampaignIds()): Promise<CampaignPoints[]> {
+/**
+ * 캠페인마다 사용자의 포인트를 조회한다. lookups 는 Galxe ID 와 연결 주소들.
+ * Galxe 는 EVM·Solana 주소나 Galxe ID 중 무엇으로 조회해도 같은 계정의 전체 포인트를 돌려준다(2026-10-28 확인).
+ * 그래서 더하면 두 주소가 연결된 계정은 2배가 된다. 가장 큰 값 하나만 쓴다.
+ */
+export async function getCampaignPoints(lookups: string[], campaignIds = getCampaignIds()): Promise<CampaignPoints[]> {
   return Promise.all(
     campaignIds.map(async (id) => {
-      const lookups = addresses.length > 0 ? addresses : [NO_ADDRESS];
-      const results = await Promise.all(lookups.map((address) => queryCampaignPoints(id, address)));
+      const targets = lookups.length > 0 ? lookups : [NO_ADDRESS];
+      const results = await Promise.all(targets.map((target) => queryCampaignPoints(id, target)));
       return {
         id,
         name: results.find((r) => r.name)?.name ?? null,
         url: results.find((r) => r.url)?.url ?? null,
-        points: addresses.length > 0 ? results.reduce((sum, r) => sum + r.points, 0) : 0,
+        points: lookups.length > 0 ? Math.max(0, ...results.map((r) => r.points)) : 0,
       };
     }),
   );
