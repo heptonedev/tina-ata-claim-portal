@@ -67,8 +67,10 @@ export function useTokenAccount() {
       tx.feePayer = publicKey;
 
       const signature = await sendTransaction(tx, connection);
-      await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
-      setStatus("ready");
+      const { value } = await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
+      // 확인은 실패한 트랜잭션도 결과로 돌려준다. 실패 여부를 보고, 실제 계정이 보일 때만 완료로 둔다
+      if (value.err) throw new Error(`Token account transaction failed: ${JSON.stringify(value.err)}`);
+      if (!(await check())) throw new Error("Token account not found after the transaction");
     } catch (err) {
       // 확인만 늦었을 수 있으니 실제 상태를 다시 본다
       if (await check()) return;

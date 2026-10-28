@@ -93,7 +93,8 @@ export default function DevnetTools({ refreshKey, sessionToken, claimed, onClaim
         tx.recentBlockhash = blockhash;
         tx.feePayer = publicKey;
         const signature = await sendTransaction(tx, connection);
-        await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
+        const { value } = await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
+        if (value.err) throw new Error(`The delete transaction failed: ${JSON.stringify(value.err)}`);
         onAccountChanged();
         done.push("account");
       }

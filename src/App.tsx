@@ -10,6 +10,7 @@ import GalxeMark from "@/components/GalxeMark";
 import Topography from "@/components/Topography";
 import { useEventInfo } from "@/hooks/useEventInfo";
 import { useClaim } from "@/hooks/useClaim";
+import { useDeadlinePassed } from "@/hooks/useDeadlinePassed";
 import { useGalxeSession } from "@/hooks/useGalxeSession";
 import { ATA_COST_SOL, useTokenAccount } from "@/hooks/useTokenAccount";
 import { formatDeadline, formatSol, shortAddress } from "@/lib/format";
@@ -19,7 +20,7 @@ export default function App() {
   const { setVisible: openWalletModal } = useWalletModal();
   const galxe = useGalxeSession();
   const { campaigns, closesAt } = useEventInfo();
-  const closed = closesAt !== null && Date.now() > Date.parse(closesAt);
+  const closed = useDeadlinePassed(closesAt);
 
   const onSessionExpired = useCallback((message: string) => galxe.signOut(message), [galxe]);
   const claim = useClaim(galxe.markClaimed, onSessionExpired);
@@ -28,7 +29,8 @@ export default function App() {
   const session = galxe.state.status === "ready" ? galxe.state.session : null;
   const signedIn = !!session;
   const claimed = session?.claim ?? null;
-  const canContinue = signedIn && session.eligible && !claimed;
+  // 마감 뒤에는 TINA 계정 생성(SOL 지출)과 신청으로 넘어가지 않는다. 서버도 마감 후 신청을 거절한다.
+  const canContinue = signedIn && session.eligible && !claimed && !closed;
   const walletReady = canContinue && !!publicKey;
   // 토큰 계정(ATA)은 신청자가 직접 만든다 (보관료 SOL 을 신청자가 낸다)
   const accountReady = walletReady && tokenAccount.status === "ready";
@@ -228,6 +230,15 @@ function GalxeStep({ galxe, closed }: { galxe: ReturnType<typeof useGalxeSession
             : "This Galxe account has no linked wallet, so no points could be found. Link the wallet you used for the quests on Galxe, then sign in again."}
         </Note>
         <div className="mt-4">{switchAccount}</div>
+      </>
+    );
+  }
+
+  if (closed) {
+    return (
+      <>
+        <p className="text-muted">Signed in as Galxe ID {session.galxeId}</p>
+        <Note>Claims are closed. Thanks for joining the TINA campaigns.</Note>
       </>
     );
   }
