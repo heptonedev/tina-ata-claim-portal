@@ -13,8 +13,11 @@ async function bootstrap() {
   const { createRoot } = await import("react-dom/client");
   const { default: Providers } = await import("./providers");
   const { default: App } = await import("./App");
-  await import("@solana/wallet-adapter-react-ui/styles.css");
-  await import("./globals.css");
+  // CSS 를 못 받아도 화면은 띄운다 (스타일이 빠질 뿐 신청은 할 수 있게)
+  await Promise.all([
+    import("@solana/wallet-adapter-react-ui/styles.css").catch((err) => console.error("wallet styles failed to load", err)),
+    import("./globals.css").catch((err) => console.error("styles failed to load", err)),
+  ]);
 
   createRoot(document.getElementById("root")!).render(
     <StrictMode>

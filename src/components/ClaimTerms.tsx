@@ -42,12 +42,12 @@ export default function ClaimTerms() {
         </button>
 
         {open && (
-          <div id={panelId} className="rounded-2xl border border-white/5 bg-white/3 p-8">
+          <div id={panelId} className="rounded-2xl border border-white/5 bg-white/3 p-10 max-lg:p-8">
             <ol className="flex max-w-[880px] flex-col gap-4 text-base leading-[1.625]">
               {[...TERMS, null].map((text, i) => (
                 <li key={i} className="flex items-start">
                   <span className="w-9 shrink-0 font-semibold tracking-[-0.32px] text-accent">{String(i + 1).padStart(2, "0")}</span>
-                  <span className="flex-1 tracking-[0.09px] text-white/75">
+                  <span className="flex-1 tracking-[0.09px] text-white/75 max-sm:text-[15px] max-sm:tracking-[0.144px]">
                     {text ?? (
                       <>
                         For event-related inquiries, please contact{" "}

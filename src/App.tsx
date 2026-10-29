@@ -26,7 +26,7 @@ export default function App() {
 
   const onSessionExpired = useCallback((message: string) => galxe.signOut(message), [galxe]);
   const claim = useClaim(galxe.markClaimed, onSessionExpired);
-  const tokenAccount = useTokenAccount();
+  const tokenAccount = useTokenAccount(closesAt);
 
   const session = galxe.state.status === "ready" ? galxe.state.session : null;
   const signedIn = !!session;
@@ -182,6 +182,10 @@ function TokenAccountStep({ tokenAccount }: { tokenAccount: ReturnType<typeof us
 
 function GalxeStep({ galxe, closed }: { galxe: ReturnType<typeof useGalxeSession>; closed: boolean }) {
   const { state } = galxe;
+  const closedNote = <Note>Claims are closed. Thanks for joining the TINA campaigns.</Note>;
+
+  // 마감 뒤에는 로그인·조회 안내 대신 마감 안내를 먼저 보인다 (이미 신청한 계정의 완료 표시만 유지)
+  if (state.status !== "ready" && closed) return closedNote;
 
   if (state.status === "waiting") {
     return (
@@ -197,10 +201,6 @@ function GalxeStep({ galxe, closed }: { galxe: ReturnType<typeof useGalxeSession
 
   if (state.status === "checking") {
     return <StepText>Checking your Loyalty Points in both campaigns…</StepText>;
-  }
-
-  if (state.status === "idle" && closed) {
-    return <Note>Claims are closed. Thanks for joining the TINA campaigns.</Note>;
   }
 
   if (state.status === "idle") {
@@ -227,6 +227,15 @@ function GalxeStep({ galxe, closed }: { galxe: ReturnType<typeof useGalxeSession
     </StepActions>
   );
 
+  if (closed && !session.claim) {
+    return (
+      <>
+        <StepText done={session.eligible}>{signedInAs}.</StepText>
+        {closedNote}
+      </>
+    );
+  }
+
   if (!session.eligible && !session.claim) {
     return (
       <>
@@ -242,14 +251,6 @@ function GalxeStep({ galxe, closed }: { galxe: ReturnType<typeof useGalxeSession
   }
 
   const total = session.campaigns.reduce((sum, c) => sum + c.points, 0);
-  if (closed && !session.claim) {
-    return (
-      <>
-        <StepText done>{signedInAs}.</StepText>
-        <Note>Claims are closed. Thanks for joining the TINA campaigns.</Note>
-      </>
-    );
-  }
 
   return <StepText done>{signedInAs}. You’re eligible with {total.toLocaleString()} points.</StepText>;
 }
