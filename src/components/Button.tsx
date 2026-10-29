@@ -1,21 +1,18 @@
 import type { ButtonHTMLAttributes } from "react";
 
-type Props = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "quiet"; busy?: boolean };
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary"; busy?: boolean };
 
+// Figma Button: Primary(파란 채움) / Secondary(보라 테두리). 비활성·진행 중은 60% 투명도, 진행 중엔 스피너.
 export default function Button({ variant = "primary", busy, disabled, className = "", children, ...rest }: Props) {
-  const base = "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 text-[0.95rem] font-semibold transition-colors disabled:cursor-not-allowed";
+  const base =
+    "inline-flex items-center justify-center gap-2.5 rounded-full px-7 py-3 text-xl leading-[1.2] font-bold tracking-[-0.24px] text-white whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-60";
   const look =
     variant === "primary"
-      ? "bg-tina text-white hover:bg-[#1a8bff] disabled:bg-contour disabled:text-muted"
-      : "border border-contour-strong text-paper hover:border-muted disabled:text-muted";
+      ? "bg-primary enabled:hover:bg-primary-hover"
+      : "border border-accent bg-accent/12 enabled:hover:bg-accent/22";
   return (
     <button {...rest} disabled={disabled || busy} aria-busy={busy || undefined} className={`${base} ${look} ${className}`}>
-      {busy && (
-        <svg className="h-4 w-4 animate-spin motion-reduce:animate-none" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeOpacity="0.3" strokeWidth="3" />
-          <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-        </svg>
-      )}
+      {busy && <img src="/galxe/icon-spinner.svg" alt="" width={20} height={20} className="size-5 animate-spin motion-reduce:animate-none" />}
       {children}
     </button>
   );

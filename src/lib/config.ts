@@ -11,6 +11,10 @@ export const GALXE_OAUTH_URL = "https://app.galxe.com/oauth";
 export const GALXE_REDIRECT_URI = `${window.location.origin}/`;
 export const GALXE_SCOPES = "GalxeID SolanaAddress EVMAddress Email Twitter Discord Github Telegram";
 
+// 지급 시작일·문의처 (화면 문구와 약관에 함께 쓴다)
+export const PAYOUT_START = "December 24, 2026";
+export const CONTACT_EMAIL = "mkt@heptone.io";
+
 // dev API 는 devnet 에서 ATA 를 확인한다 (테스트에 실제 SOL 이 들지 않게). 프론트도 API 에 맞춘다.
 export const SOLANA_NETWORK: "mainnet" | "devnet" = API_BASE === DEV_API ? "devnet" : "mainnet";
 

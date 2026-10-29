@@ -1,25 +1,27 @@
 import { useCallback } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import AccountPanel from "@/components/AccountPanel";
 import DevnetTools, { SHOW_DEVNET_TOOLS } from "@/components/DevnetTools";
 import Button from "@/components/Button";
+import ClaimTerms from "@/components/ClaimTerms";
+import Hero from "@/components/Hero";
 import Note from "@/components/Note";
-import RouteStop, { type StopState } from "@/components/RouteStop";
-import GalxeMark from "@/components/GalxeMark";
-import Topography from "@/components/Topography";
+import SiteFooter from "@/components/SiteFooter";
+import SiteHeader from "@/components/SiteHeader";
+import StepCard, { StepActions, StepText, type StepState } from "@/components/StepCard";
 import { useEventInfo } from "@/hooks/useEventInfo";
 import { useClaim } from "@/hooks/useClaim";
 import { useDeadlinePassed } from "@/hooks/useDeadlinePassed";
 import { useGalxeSession } from "@/hooks/useGalxeSession";
 import { ATA_COST_SOL, useTokenAccount } from "@/hooks/useTokenAccount";
-import { formatDeadline, formatSol, shortAddress } from "@/lib/format";
+import { PAYOUT_START } from "@/lib/config";
+import { formatDeadline, formatSol, shortAddress, shortId } from "@/lib/format";
 
 export default function App() {
   const { publicKey, disconnect } = useWallet();
   const { setVisible: openWalletModal } = useWalletModal();
   const galxe = useGalxeSession();
-  const { campaigns, closesAt } = useEventInfo();
+  const { closesAt } = useEventInfo();
   const closed = useDeadlinePassed(closesAt);
 
   const onSessionExpired = useCallback((message: string) => galxe.signOut(message), [galxe]);
@@ -35,101 +37,110 @@ export default function App() {
   // 토큰 계정(ATA)은 신청자가 직접 만든다 (보관료 SOL 을 신청자가 낸다)
   const accountReady = walletReady && tokenAccount.status === "ready";
 
-  // 포인트가 없으면 1단계에 머문다 (경로가 다음 단계로 이어지지 않게)
-  const stop1: StopState = signedIn && (session.eligible || claimed) ? "done" : "current";
-  const stop2: StopState = claimed || walletReady ? "done" : canContinue ? "current" : "upcoming";
-  const stop3: StopState = claimed || accountReady ? "done" : walletReady ? "current" : "upcoming";
-  const stop4: StopState = claimed ? "done" : accountReady ? "current" : "upcoming";
+  // 포인트가 없으면 1단계에 머문다 (다음 단계로 넘어가지 않게)
+  const step1: StepState = signedIn && (session.eligible || claimed) ? "done" : "current";
+  const step2: StepState = claimed || walletReady ? "done" : canContinue ? "current" : "upcoming";
+  const step3: StepState = claimed || accountReady ? "done" : walletReady ? "current" : "upcoming";
+  const step4: StepState = claimed ? "done" : accountReady ? "current" : "upcoming";
+
+  // 헤더 Sign in 은 Galxe 로그인 전에만 보인다 (마감 뒤에는 숨긴다)
+  const canSignIn = galxe.state.status === "idle" && !closed;
 
   return (
-    <div className="relative min-h-screen">
-      <Topography />
+    <div className="min-h-screen bg-page text-white">
+      <Hero>
+        <SiteHeader
+          walletAddress={publicKey?.toBase58() ?? null}
+          onSignIn={canSignIn ? galxe.signIn : null}
+          onDisconnect={() => void disconnect()}
+        />
+      </Hero>
 
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-6 sm:px-8">
-        <GalxeMark />
-        {publicKey && (
-          <div className="flex items-center gap-3 text-sm">
-            <span className="hidden text-muted sm:inline">{shortAddress(publicKey.toBase58())}</span>
-            <button onClick={() => disconnect()} className="rounded-md px-2 py-1 text-muted hover:text-paper">
-              Disconnect
-            </button>
-          </div>
-        )}
-      </header>
-
-      <main className="mx-auto grid max-w-6xl gap-12 px-5 pt-6 pb-24 sm:px-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-16 lg:pt-14">
-        <section>
-          <h1 className="max-w-[14ch] font-display text-[2.6rem] leading-[1.02] font-bold tracking-[-0.03em] [font-stretch:85%] sm:text-6xl">
-            Claim TINA for your Galxe quests
-          </h1>
-          <p className="mt-5 max-w-[46ch] text-lg leading-relaxed text-muted">
-            Earned points in a TINA campaign on Galxe? Sign in with Galxe, connect a Solana wallet, create your TINA account, and claim.
-          </p>
-          {closesAt && (
-            <p className={`mt-4 text-[0.95rem] font-semibold ${closed ? "text-muted" : "text-paper"}`}>
-              {closed ? `Claims closed on ${formatDeadline(closesAt)}.` : `Claims close ${formatDeadline(closesAt)}.`}
+      <main className="flex justify-center bg-claim px-10 py-36 max-lg:px-8 max-lg:py-[120px] max-sm:px-5 max-sm:py-24">
+        <div className="grid w-full max-w-[1200px] gap-16 lg:grid-cols-[473px_minmax(0,1fr)] max-lg:gap-12">
+          <section className="flex flex-col items-start gap-5">
+            <h2 className="text-[40px] leading-[1.25] font-bold tracking-[-1.13px] max-lg:text-[34px] max-lg:tracking-[-0.8px] max-sm:text-[30px] max-sm:tracking-[-0.7px]">
+              Claim Your Loyalty Points as TINA
+            </h2>
+            <p className="text-base leading-[1.625] tracking-[0.09px] text-white/70 max-sm:text-[15px] max-sm:tracking-[0.144px]">
+              Every loyalty point you earned in the TINA campaigns on Galxe is worth 1 TINA. Sign in with Galxe, connect your Solana wallet, create your TINA token account, and submit your claim.
             </p>
-          )}
+            {closesAt && (
+              <p className="flex items-center gap-2 pt-1 text-sm leading-[1.4] font-semibold tracking-[0.2px] text-accent-soft">
+                <img src="/galxe/icon-clock.svg" alt="" width={18} height={18} className="size-[18px] shrink-0" />
+                {closed ? `Claims closed on ${formatDeadline(closesAt)}.` : `Claims close ${formatDeadline(closesAt)}.`}
+              </p>
+            )}
+          </section>
 
-          <ol className="mt-12">
-            <RouteStop index={1} title="Sign in with Galxe" state={stop1}>
-              <GalxeStep galxe={galxe} closed={closed} />
-            </RouteStop>
+          <div>
+            <ol className="flex flex-col gap-6 max-lg:gap-5">
+              <StepCard index={1} title="Sign in with Galxe" state={step1}>
+                <GalxeStep galxe={galxe} closed={closed} />
+              </StepCard>
 
-            <RouteStop index={2} title="Connect your Solana wallet" state={stop2}>
-              {claimed ? (
-                <p className="text-muted">Wallet {shortAddress(claimed.walletAddress)}</p>
-              ) : canContinue && (
-                publicKey ? (
-                  <p className="text-muted">TINA will be sent to {shortAddress(publicKey.toBase58())}</p>
-                ) : (
+              <StepCard index={2} title="Connect your Solana wallet" state={step2}>
+                {claimed ? (
+                  <StepText done>Wallet connected · {shortAddress(claimed.walletAddress)}</StepText>
+                ) : canContinue && (
+                  publicKey ? (
+                    <StepText done>Wallet connected · {shortAddress(publicKey.toBase58())}</StepText>
+                  ) : (
+                    <>
+                      <StepText>TINA will be sent to this wallet.</StepText>
+                      <StepActions>
+                        <Button onClick={() => openWalletModal(true)}>Connect wallet</Button>
+                      </StepActions>
+                    </>
+                  )
+                )}
+              </StepCard>
+
+              <StepCard index={3} title="Create your TINA account" state={step3}>
+                {claimed ? (
+                  <StepText done>Your wallet can receive TINA.</StepText>
+                ) : walletReady && (
+                  <TokenAccountStep tokenAccount={tokenAccount} />
+                )}
+              </StepCard>
+
+              <StepCard index={4} title="Claim your TINA" state={step4}>
+                {claimed ? (
                   <>
-                    <p className="max-w-prose leading-relaxed text-muted">TINA will be sent to this wallet.</p>
-                    <Button className="mt-4" onClick={() => openWalletModal(true)}>Connect wallet</Button>
+                    <StepText done>
+                      Your TINA will be sent to {shortAddress(claimed.walletAddress)} in batches starting {PAYOUT_START}, after verification.
+                    </StepText>
+                    <Note tone="success">Claim received.</Note>
                   </>
-                )
-              )}
-            </RouteStop>
+                ) : accountReady && session && (
+                  <>
+                    <StepText>Sign a message to prove you own this wallet. Signing is free and doesn't move any funds.</StepText>
+                    {claim.error && <Note tone="error">{claim.error}</Note>}
+                    <StepActions>
+                      <Button busy={claim.phase !== "idle"} onClick={() => claim.claim(session.sessionToken)}>
+                        {claim.phase === "signing" ? "Waiting for signature" : claim.phase === "submitting" ? "Sending claim" : "Sign and claim"}
+                      </Button>
+                    </StepActions>
+                  </>
+                )}
+              </StepCard>
+            </ol>
 
-            <RouteStop index={3} title="Create your TINA account" state={stop3}>
-              {!claimed && walletReady && (
-                <TokenAccountStep tokenAccount={tokenAccount} />
-              )}
-            </RouteStop>
-
-            <RouteStop index={4} title="Claim your TINA" state={stop4} last>
-              {claimed ? (
-                <Note tone="success">
-                  Claim received. TINA will be sent to {shortAddress(claimed.walletAddress)} after the campaign ends.
-                </Note>
-              ) : accountReady && session && (
-                <>
-                  <p className="max-w-prose leading-relaxed text-muted">
-                    Sign a message to prove you own this wallet. Signing is free and doesn't move any funds.
-                  </p>
-                  <Button className="mt-4" busy={claim.phase !== "idle"} onClick={() => claim.claim(session.sessionToken)}>
-                    {claim.phase === "signing" ? "Waiting for signature" : claim.phase === "submitting" ? "Sending claim" : "Sign and claim"}
-                  </Button>
-                  {claim.error && <Note tone="error">{claim.error}</Note>}
-                </>
-              )}
-            </RouteStop>
-          </ol>
-        </section>
-
-        <div className="lg:pt-3">
-          <AccountPanel session={session} campaigns={campaigns} closesAt={closesAt} />
-          {SHOW_DEVNET_TOOLS && (
-            <DevnetTools
-              refreshKey={tokenAccount.status}
-              sessionToken={session?.sessionToken ?? null}
-              claimed={!!claimed}
-              onClaimReset={galxe.markUnclaimed}
-              onAccountChanged={() => void tokenAccount.recheck()}
-            />
-          )}
+            {SHOW_DEVNET_TOOLS && (
+              <DevnetTools
+                refreshKey={tokenAccount.status}
+                sessionToken={session?.sessionToken ?? null}
+                claimed={!!claimed}
+                onClaimReset={galxe.markUnclaimed}
+                onAccountChanged={() => void tokenAccount.recheck()}
+              />
+            )}
+          </div>
         </div>
       </main>
+
+      <ClaimTerms />
+      <SiteFooter />
     </div>
   );
 }
@@ -138,33 +149,33 @@ function TokenAccountStep({ tokenAccount }: { tokenAccount: ReturnType<typeof us
   const { status, solBalance, error } = tokenAccount;
 
   if (status === "unknown" || status === "checking") {
-    return <p className="text-muted">Checking your wallet…</p>;
+    return <StepText>Checking your wallet…</StepText>;
   }
   if (status === "ready") {
-    return <p className="text-muted">Your wallet can receive TINA.</p>;
+    return <StepText done>Your wallet can receive TINA.</StepText>;
   }
 
   const short = solBalance !== null && solBalance < ATA_COST_SOL;
   return (
     <>
-      <p className="max-w-prose leading-relaxed text-muted">
+      <StepText>
         Your wallet needs a TINA account to receive TINA. Creating it costs about {formatSol(ATA_COST_SOL)} SOL, paid from this wallet.
-      </p>
+      </StepText>
       {short && (
         <Note>
           This wallet has {formatSol(solBalance)} SOL. Add at least {formatSol(ATA_COST_SOL)} SOL, then check again.
         </Note>
       )}
-      <div className="mt-4 flex flex-wrap gap-3">
+      {error && <Note tone="error">{error}</Note>}
+      <StepActions>
         {short ? (
-          <Button onClick={() => void tokenAccount.recheck()}>Check again</Button>
+          <Button variant="secondary" onClick={() => void tokenAccount.recheck()}>Check again</Button>
         ) : (
           <Button busy={status === "creating"} onClick={tokenAccount.create}>
             {status === "creating" ? "Creating account" : "Create TINA account"}
           </Button>
         )}
-      </div>
-      {error && <Note tone="error">{error}</Note>}
+      </StepActions>
     </>
   );
 }
@@ -175,17 +186,17 @@ function GalxeStep({ galxe, closed }: { galxe: ReturnType<typeof useGalxeSession
   if (state.status === "waiting") {
     return (
       <>
-        <p className="max-w-prose leading-relaxed text-muted">Finish signing in with Galxe in the popup window.</p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Button variant="quiet" onClick={galxe.showPopup}>Show the Galxe window</Button>
-          <Button variant="quiet" onClick={galxe.continueInThisWindow}>Sign in on this page instead</Button>
-        </div>
+        <StepText>Finish signing in with Galxe in the popup window.</StepText>
+        <StepActions>
+          <Button variant="secondary" onClick={galxe.showPopup}>Show the Galxe window</Button>
+          <Button variant="secondary" onClick={galxe.continueInThisWindow}>Sign in on this page instead</Button>
+        </StepActions>
       </>
     );
   }
 
   if (state.status === "checking") {
-    return <p className="text-muted">Checking your points in both campaigns…</p>;
+    return <StepText>Checking your Loyalty Points in both campaigns…</StepText>;
   }
 
   if (state.status === "idle" && closed) {
@@ -195,59 +206,50 @@ function GalxeStep({ galxe, closed }: { galxe: ReturnType<typeof useGalxeSession
   if (state.status === "idle") {
     return (
       <>
-        <p className="max-w-prose leading-relaxed text-muted">
-          We check your points in the TINA campaigns on Galxe. Nothing is posted to your account.
-        </p>
-        <Button className="mt-4" onClick={galxe.signIn}>Sign in with Galxe</Button>
+        <StepText>
+          We check your Loyalty Points in the TINA campaigns on Galxe. We won't change your account or take any actions on your behalf.
+        </StepText>
         {state.error && <Note tone="error">{state.error}</Note>}
+        <StepActions>
+          <Button onClick={galxe.signIn}>Sign in with Galxe</Button>
+        </StepActions>
       </>
     );
   }
 
   const { session } = state;
+  const signedInAs = `Signed in as Galxe ID ${shortId(session.galxeId)}`;
   const switchAccount = (
-    <Button variant="quiet" onClick={() => { galxe.signOut(); galxe.signIn(); }}>
-      Sign in with another account
-    </Button>
+    <StepActions>
+      <Button variant="secondary" onClick={() => { galxe.signOut(); galxe.signIn(); }}>
+        Sign in with another account
+      </Button>
+    </StepActions>
   );
 
-  if (session.claim) {
+  if (!session.eligible && !session.claim) {
     return (
       <>
-        <p className="text-muted">Signed in as Galxe ID {session.galxeId}</p>
-        <Note>This Galxe account has already claimed.</Note>
-      </>
-    );
-  }
-
-  if (!session.eligible) {
-    return (
-      <>
-        <p className="text-muted">Signed in as Galxe ID {session.galxeId}</p>
+        <StepText>{signedInAs}</StepText>
         <Note>
           {session.hasLinkedAddress
-            ? "This Galxe account didn't earn points in either TINA campaign, so it can't claim. If you did the quests with another Galxe account, sign in with that one."
+            ? "This Galxe account didn't earn points in either TINA campaign, so it can't claim TINA. If you completed the quests with another Galxe account, sign in with that one."
             : "This Galxe account has no linked wallet, so no points could be found. Link the wallet you used for the quests on Galxe, then sign in again."}
         </Note>
-        <div className="mt-4">{switchAccount}</div>
-      </>
-    );
-  }
-
-  if (closed) {
-    return (
-      <>
-        <p className="text-muted">Signed in as Galxe ID {session.galxeId}</p>
-        <Note>Claims are closed. Thanks for joining the TINA campaigns.</Note>
+        {switchAccount}
       </>
     );
   }
 
   const total = session.campaigns.reduce((sum, c) => sum + c.points, 0);
-  return (
-    <p className="text-muted">
-      Signed in as Galxe ID {session.galxeId}.{" "}
-      <span className="font-medium text-reach">You're eligible with {total.toLocaleString()} points.</span>
-    </p>
-  );
+  if (closed && !session.claim) {
+    return (
+      <>
+        <StepText done>{signedInAs}.</StepText>
+        <Note>Claims are closed. Thanks for joining the TINA campaigns.</Note>
+      </>
+    );
+  }
+
+  return <StepText done>{signedInAs}. You’re eligible with {total.toLocaleString()} points.</StepText>;
 }

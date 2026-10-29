@@ -29,17 +29,19 @@ Galxe의 TINA 캠페인 두 곳 중 **한 곳이라도 포인트가 있는 Galxe
 
 ## 프로젝트 구조
 ```
-index.html                # Vite 엔트리 (글꼴: Bricolage Grotesque, Instrument Sans)
+index.html                # Vite 엔트리 (글꼴: Pretendard Variable, public/fonts)
 deploy-ec2.sh             # EC2 배포 스크립트
+public/galxe/             # Figma "갤럭시 페이지" 이미지·아이콘 (선물 상자 hero-gift.webp 등)
 src/
 ├── main.tsx / providers.tsx     # React 루트, Solana Wallet Provider
-├── App.tsx                      # 신청 화면 (3단계 경로)
-├── globals.css                  # 디자인 토큰 (밤 지도 남색, TINA 블루)
+├── App.tsx                      # 신청 화면 (히어로 → 4단계 카드 → 약관 → 푸터)
+├── globals.css                  # 디자인 토큰 (Figma 03 Components: 보라 강조, 단계 카드 색)
 ├── components/
-│   ├── RouteStop.tsx            # 경로의 단계 하나 (핀 + 경로선)
-│   ├── AccountPanel.tsx         # Galxe 캠페인 목록·포인트 패널
-│   ├── Topography.tsx           # 정적 등고선 배경
-│   ├── GalxeMark.tsx            # TINA × Galxe 표기
+│   ├── SiteHeader.tsx           # 로고 + Galxe Event, Sign in / 지갑 주소(누르면 연결 해제)
+│   ├── Hero.tsx                 # Thanks for Joining TINA × Galxe! + 선물 상자
+│   ├── StepCard.tsx             # 단계 카드 (Todo / Active / Done)
+│   ├── ClaimTerms.tsx           # 약관 12개 (접고 펼침)
+│   ├── SiteFooter.tsx / TinaLogo.tsx
 │   └── Button.tsx / Note.tsx
 ├── hooks/
 │   ├── useGalxeSession.ts       # Galxe 로그인 콜백 처리, 세션 보관(sessionStorage)
